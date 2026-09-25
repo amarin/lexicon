@@ -19,15 +19,26 @@ func manifest(version string) lexicon.Manifest {
 	}
 }
 
-// writeManifest writes the sidecar atomically.
-func writeManifest(path, version string) error {
+// manifestBytes renders the sidecar content for version.
+func manifestBytes(version string) ([]byte, error) {
 	var b bytes.Buffer
 	if _, err := manifest(version).WriteTo(&b); err != nil {
+		return nil, err
+	}
+
+	return b.Bytes(), nil
+}
+
+// writeManifest writes the sidecar atomically (own temp file, then rename to
+// path).
+func writeManifest(path, version string) error {
+	data, err := manifestBytes(version)
+	if err != nil {
 		return err
 	}
 
 	tmp := path + ".tmp"
-	if err := os.WriteFile(tmp, b.Bytes(), 0o644); err != nil {
+	if err := os.WriteFile(tmp, data, 0o644); err != nil {
 		return err
 	}
 

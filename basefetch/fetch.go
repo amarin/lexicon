@@ -51,17 +51,51 @@ func Fetch(dst string) (string, error) {
 		return "", fmt.Errorf("basefetch: save: %w", err)
 	}
 
-	version, _ := loader.LocalVersion()
+	version, _ := loader.LocalVersion() // found-bool ignored: an empty version is allowed
 
-	if err := writeManifest(lexicon.ManifestPath(dst), version); err != nil {
-		_ = os.Remove(tmp)
-
-		return "", err
-	}
-
-	if err := os.Rename(tmp, dst); err != nil {
+	if err := finalize(tmp, dst, version); err != nil {
 		return "", err
 	}
 
 	return version, nil
+}
+
+// finalize places the compiled dictionary and its manifest sidecar next to
+// dst, given the already-saved dictionary temp file datTmp. It writes the
+// manifest to its own temp file first, then renames the dictionary tmp into
+// place before the manifest tmp (owner ruling): a resulting .dat without a
+// .meta is acceptable, since the registry falls back to gomorphy BuildInfo,
+// but a final .meta must never exist without its .dat. On any error it
+// removes whichever temp files still exist.
+func finalize(datTmp, dst, version string) error {
+	metaPath := lexicon.ManifestPath(dst)
+	metaTmp := metaPath + ".tmp"
+
+	data, err := manifestBytes(version)
+	if err != nil {
+		_ = os.Remove(datTmp)
+
+		return err
+	}
+
+	if err := os.WriteFile(metaTmp, data, 0o644); err != nil {
+		_ = os.Remove(datTmp)
+
+		return err
+	}
+
+	if err := os.Rename(datTmp, dst); err != nil {
+		_ = os.Remove(datTmp)
+		_ = os.Remove(metaTmp)
+
+		return fmt.Errorf("basefetch: save: %w", err)
+	}
+
+	if err := os.Rename(metaTmp, metaPath); err != nil {
+		_ = os.Remove(metaTmp)
+
+		return err
+	}
+
+	return nil
 }
