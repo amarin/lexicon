@@ -124,7 +124,7 @@ func TestAnalyzeKeepsToken(t *testing.T) {
 }
 
 func TestAnalyzerVersion(t *testing.T) {
-	if got := newTestAnalyzer().Version(); got != "analyzer-1/prereform-2/fake-1" {
+	if got := newTestAnalyzer().Version(); got != "analyzer-2/prereform-2/fake-1" {
 		t.Fatalf("Version = %q", got)
 	}
 }

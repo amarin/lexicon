@@ -28,7 +28,10 @@ func (a *Analyzer) word(form string, p Profile) wordResult {
 
 // lookupWord: exact readings (trying pre-reform ending variants when there are
 // none), otherwise base predictions, otherwise the form as an unknown lemma.
-// One-letter forms never take abbreviation readings (they need a dot, D14).
+// Predictions are used only when neither the form nor any variant has exact
+// readings: when the profile filters all exact readings out, the lemma is
+// unknown. One-letter forms never take abbreviation readings (they need a
+// dot, D14). Readings tagged Abbr do not count against a stop word.
 func (a *Analyzer) lookupWord(form string, p Profile) wordResult {
 	exact, predicted := a.parse(form, p.Kinds)
 	if utf8.RuneCountInString(form) == 1 {
@@ -47,12 +50,16 @@ func (a *Analyzer) lookupWord(form string, p Profile) wordResult {
 		}
 	}
 
-	if allStop(exact) {
-		return wordResult{lemmas: a.lemmas(exact, FlagStop|extra), stop: true}
+	if svc := serviceCandidates(exact); allStop(svc) {
+		return wordResult{lemmas: a.lemmas(svc, FlagStop|extra), stop: true}
 	}
 
-	ls := a.lemmas(p.filter(exact), extra)
-	if ls == nil {
+	var ls []Lemma
+
+	switch {
+	case len(exact) > 0:
+		ls = a.lemmas(p.filter(exact), extra)
+	default:
 		ls = a.lemmas(predicted, FlagPredicted)
 	}
 

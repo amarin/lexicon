@@ -122,3 +122,59 @@ func BenchmarkRealBaseAnalyzeFull(b *testing.B) {
 		a.Analyze(analyzerBenchText, Profile{Name: "text"}, ModeFull)
 	}
 }
+
+// TestRealBaseStopWords: one-letter service words carry letter-name Abbr
+// readings in OpenCorpora; they are still stop words (Final Ruling I1).
+func TestRealBaseStopWords(t *testing.T) {
+	_, a := openReal(t)
+
+	var forms []string
+	for _, term := range a.Analyze("кот в селе и с братом", Profile{Name: "text"}, ModeIndex) {
+		forms = append(forms, term.Form)
+	}
+
+	if got := strings.Join(forms, " "); got != "кот селе братом" {
+		t.Fatalf("ModeIndex forms = %q", got)
+	}
+
+	q := a.ParseQuery("кот в", Profile{Name: "text"})
+	if q.Partial == nil || q.Partial.Form != "в" || q.Partial.Lemmas != nil {
+		t.Fatalf("ParseQuery(кот в) = %+v", q)
+	}
+}
+
+// TestRealBaseReformPlace: a pre-reform form whose variant's exact readings
+// are all filtered out by the profile is analysed like the modern form, never
+// by base predictions of the original form (Final Ruling I2).
+func TestRealBaseReformPlace(t *testing.T) {
+	_, a := openReal(t)
+
+	place := Profile{
+		Name:      "place",
+		Kinds:     []Kind{KindBase, KindAbbrev},
+		Grammemes: map[Kind][]string{KindBase: {"Geox"}},
+	}
+
+	lemmas := func(text string) string {
+		terms := a.Analyze(text, place, ModeIndex)
+		if len(terms) != 1 {
+			t.Fatalf("Analyze(%q) = %+v", text, terms)
+		}
+
+		var out []string
+		for _, l := range terms[0].Lemmas {
+			if l.Flags&FlagPredicted != 0 {
+				t.Errorf("Analyze(%q): predicted lemma %+v", text, l)
+			}
+
+			out = append(out, l.Text+"/"+(l.Flags&^(FlagReform|FlagUnknown)).String())
+		}
+
+		return strings.Join(out, " ")
+	}
+
+	old, modern := lemmas("Боровскаго"), lemmas("Боровского")
+	if old != strings.ReplaceAll(modern, "боровского", "боровскаго") {
+		t.Fatalf("Боровскаго → %q, Боровского → %q", old, modern)
+	}
+}

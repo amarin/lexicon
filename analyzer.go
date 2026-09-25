@@ -4,7 +4,7 @@ import "github.com/amarin/lexicon/textnorm"
 
 // analyzerVersion changes whenever analysis rules of this package change the
 // produced terms (hosts reindex).
-const analyzerVersion = "1"
+const analyzerVersion = "2"
 
 // Analyzer turns text into terms with lemmas: textnorm tokens, abbreviations,
 // lemmas from Dictionaries filtered by a Profile, stop words. One Analyzer
