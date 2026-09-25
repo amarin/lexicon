@@ -8,7 +8,15 @@ import (
 
 // SetEnabled enables or disables a dictionary: stores the state, then swaps in
 // a new snapshot. Unknown name — ErrUnknownDictionary; a store error leaves
-// the registry unchanged.
+// the registry unchanged. When name collides between a loaded file and a
+// duplicate-file error stub (e.g. a "custom.x.dat" and a "custom.x.tsv"), the
+// state applies to every entry named name — same as load, so List() looks
+// the same whether the state was set here or picked up by a Reload — but the
+// snapshot only ever contains the loaded one, since it skips error entries.
+//
+// A non-nil error from this method after the state store call succeeded (the
+// swap or an old dictionary's Close) does not mean the change was rolled
+// back: the new state and the new snapshot are already in effect.
 func (r *Registry) SetEnabled(ctx context.Context, name string, on bool) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -17,8 +25,7 @@ func (r *Registry) SetEnabled(ctx context.Context, name string, on bool) error {
 		return ErrClosed
 	}
 
-	i := indexByName(r.all, name)
-	if i < 0 {
+	if !hasLoaded(r.all, name) {
 		return fmt.Errorf("%w: %s", ErrUnknownDictionary, name)
 	}
 
@@ -26,38 +33,40 @@ func (r *Registry) SetEnabled(ctx context.Context, name string, on bool) error {
 		return fmt.Errorf("lexicon: store state of %s: %w", name, err)
 	}
 
-	r.all[i].entry.Enabled = on
+	for _, x := range r.all {
+		if x.entry.Name == name {
+			x.entry.Enabled = on
+		}
+	}
 
 	return r.swap(newSnapshot(r.all))
 }
 
-// indexByName returns the index in all of the dictionary named name: the
-// loaded (Error == "") entry when one exists among same-named duplicates
-// (e.g. a "custom.x.dat" and a "custom.x.tsv" collide on "custom.x"), else
-// the first same-named entry. -1 when none matches.
-func indexByName(all []*dict, name string) int {
-	first := -1
-
-	for i, x := range all {
-		if x.entry.Name != name {
-			continue
-		}
-
-		if x.entry.Error == "" {
-			return i
-		}
-
-		if first < 0 {
-			first = i
+// hasLoaded reports whether a dictionary named name exists and loaded
+// successfully (Error == ""). SetEnabled requires this: toggling a name that
+// exists only as a duplicate-file error stub is not meaningful, since the
+// snapshot never contains it.
+func hasLoaded(all []*dict, name string) bool {
+	for _, x := range all {
+		if x.entry.Name == name && x.entry.Error == "" {
+			return true
 		}
 	}
 
-	return first
+	return false
 }
 
 // Reload rescans Options.Dir, reopens every dictionary, re-reads the state
 // store and swaps in the new snapshot. Dictionaries of the old one are closed
-// after in-flight Parse calls finish. On error the current snapshot stays.
+// after in-flight Parse calls finish. On error from load, the current
+// snapshot stays; a swap always succeeds once load has, since load only
+// fails before opening any dictionary (see its doc comment).
+//
+// A non-nil error from this method after load succeeded (releasing an old
+// generation's dictionaries) does not mean the reload was rolled back: the
+// new snapshot is already in effect and the old generation's dictionaries
+// are release()d regardless — the error only reports a Close failure on one
+// of them.
 //
 // Replace dictionary files atomically (write a temporary file, rename):
 // overwriting a memory-mapped file in place can crash in-flight parses.

@@ -17,6 +17,12 @@ const BaseBuiltinName = "base.builtin"
 // load opens every dictionary of o in registry order — base (files of kind
 // base, else the built-in), built-ins in order (a same-name file replaces a
 // built-in in place), remaining files by name — and applies the stored state.
+//
+// load must never return a non-nil error once it has opened any dictionary: a
+// broken or undeclared-kind file is recorded on its own *dict (Entry.Error),
+// never turned into load's own return error. Registry.Reload relies on this —
+// it only calls load before touching the current snapshot, so a load error
+// leaves the registry unchanged, with nothing left to release.
 func load(ctx context.Context, o Options) ([]*dict, error) {
 	states, err := o.State.Enabled(ctx)
 	if err != nil {

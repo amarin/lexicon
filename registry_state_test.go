@@ -69,7 +69,15 @@ func TestSetEnabledStateError(t *testing.T) {
 		t.Fatal("no error")
 	}
 
-	if r.Version() != v || !r.List()[1].Enabled {
+	var enabled bool
+
+	for _, e := range r.List() {
+		if e.Name == "abbrev.test" {
+			enabled = e.Enabled
+		}
+	}
+
+	if r.Version() != v || !enabled {
 		t.Fatal("registry changed despite the store error")
 	}
 }
@@ -83,8 +91,11 @@ func TestOpenStateError(t *testing.T) {
 
 // TestSetEnabledDuplicateName: when a name is shared by a loaded file and a
 // duplicate-file error stub (both a "custom.x.dat" and a "custom.x.tsv"),
-// SetEnabled must deterministically target the loaded entry, not whichever
-// same-named entry happens to sort first (carried from the Task 13 review).
+// SetEnabled requires a loaded entry to exist (ErrUnknownDictionary
+// otherwise) but then applies the state to every entry of that name — same
+// as load, so List() looks the same whether the state came from SetEnabled
+// or from a Reload picking up an externally-changed store (carried from the
+// Task 13 review, refined in the Task 14 review).
 func TestSetEnabledDuplicateName(t *testing.T) {
 	dir := t.TempDir()
 	writeFile(t, dir, "custom.x.dat", datBytes(t, surnameForms))
@@ -96,29 +107,21 @@ func TestSetEnabledDuplicateName(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var loaded, dup int
+	n := 0
 
 	for _, e := range r.List() {
 		if e.Name != "custom.x" {
 			continue
 		}
 
-		if e.Error == "" {
-			loaded++
+		n++
 
-			if e.Enabled {
-				t.Fatal("loaded entry still enabled")
-			}
-		} else {
-			dup++
-
-			if !e.Enabled {
-				t.Fatal("duplicate-error entry changed")
-			}
+		if e.Enabled {
+			t.Fatalf("%+v still enabled", e)
 		}
 	}
 
-	if loaded != 1 || dup != 1 {
-		t.Fatalf("loaded=%d dup=%d, want 1 and 1: %+v", loaded, dup, r.List())
+	if n != 2 {
+		t.Fatalf("custom.x entries = %d, want 2: %+v", n, r.List())
 	}
 }

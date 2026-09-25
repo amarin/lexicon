@@ -111,6 +111,78 @@ func TestReloadRetiresAfterInFlight(t *testing.T) {
 	}
 }
 
+// TestCloseAndReloadReleaseEveryDictionary: a snapshot pinned across a Reload
+// and released only after Close must not leak its generation's dictionaries,
+// and Close must not double-release the generation Reload opened. Counting
+// hook calls (not just names, which repeat across generations) catches both
+// a leak (too few) and a double release (too many).
+func TestCloseAndReloadReleaseEveryDictionary(t *testing.T) {
+	var (
+		mu     sync.Mutex
+		closed []string
+	)
+
+	testHookDictClosed = func(name string) {
+		mu.Lock()
+		closed = append(closed, name)
+		mu.Unlock()
+	}
+	t.Cleanup(func() { testHookDictClosed = nil })
+
+	dir := t.TempDir()
+	writeFile(t, dir, "surname.test.dat", datBytes(t, surnameForms))
+
+	r := openTest(t, dir, nil)
+
+	var names1 []string
+	for _, e := range r.List() {
+		names1 = append(names1, e.Name)
+	}
+
+	s := r.acquire() // pin generation 1, past the Reload below
+
+	if err := r.Reload(t.Context()); err != nil { // opens generation 2
+		t.Fatal(err)
+	}
+
+	if err := r.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	mu.Lock()
+	afterClose := slices.Clone(closed)
+	mu.Unlock()
+
+	// Close releases the registry's own reference to generation 2, which
+	// nothing else pins: generation 2 must be fully closed by now.
+	// Generation 1 is still pinned by s: none of it may have closed yet.
+	if len(afterClose) != len(names1) {
+		t.Fatalf("closed after Close = %v, want exactly generation 2 (%v)", afterClose, names1)
+	}
+
+	if err := s.release(); err != nil {
+		t.Fatal(err)
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	if len(closed) != 2*len(names1) {
+		t.Fatalf("closed = %v, want %d entries (both generations)", closed, 2*len(names1))
+	}
+
+	counts := map[string]int{}
+	for _, name := range closed {
+		counts[name]++
+	}
+
+	for _, name := range names1 {
+		if counts[name] != 2 {
+			t.Errorf("%s closed %d times, want 2 (one per generation)", name, counts[name])
+		}
+	}
+}
+
 // TestConcurrentParseReload: Parse never observes a closed dictionary while
 // Reload and SetEnabled run (run with -race).
 func TestConcurrentParseReload(t *testing.T) {
