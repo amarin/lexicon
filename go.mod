@@ -8,7 +8,7 @@ require golang.org/x/text v0.41.0
 
 require (
 	github.com/amarin/gomorphy v1.2.0
-	github.com/amarin/logging v0.1.2 // indirect
+	github.com/amarin/logging v0.1.2
 	github.com/imperfectgo/zap-syslog v0.1.1 // indirect
 	github.com/klauspost/cpuid/v2 v2.4.0 // indirect
 	github.com/zeebo/xxh3 v1.1.0 // indirect

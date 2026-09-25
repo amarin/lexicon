@@ -23,6 +23,10 @@ const DefaultName = "base.opencorpora.dat"
 // atomically (temporary file + rename), together with the sidecar
 // lexicon.ManifestPath(dst). It returns the dictionary package version.
 func Fetch(dst string) (string, error) {
+	if err := ensureLogging(); err != nil {
+		return "", err
+	}
+
 	work, err := os.MkdirTemp("", "lexicon-basedict-")
 	if err != nil {
 		return "", err
