@@ -7,12 +7,14 @@ import (
 )
 
 // SetEnabled enables or disables a dictionary: stores the state, then swaps in
-// a new snapshot. Unknown name — ErrUnknownDictionary; a store error leaves
-// the registry unchanged. When name collides between a loaded file and a
-// duplicate-file error stub (e.g. a "custom.x.dat" and a "custom.x.tsv"), the
-// state applies to every entry named name — same as load, so List() looks
-// the same whether the state was set here or picked up by a Reload — but the
-// snapshot only ever contains the loaded one, since it skips error entries.
+// a new snapshot. Unknown name — ErrUnknownDictionary; a name that exists
+// only as broken entries — an error with the entry's error text (not
+// ErrUnknownDictionary); a store error leaves the registry unchanged. When
+// name collides between a loaded file and a duplicate-file error stub (e.g. a
+// "custom.x.dat" and a "custom.x.tsv"), the state applies to every entry
+// named name — same as load, so List() looks the same whether the state was
+// set here or picked up by a Reload — but the snapshot only ever contains the
+// loaded one, since it skips error entries.
 //
 // A non-nil error from this method after the state store call succeeded (the
 // swap or an old dictionary's Close) does not mean the change was rolled
@@ -26,6 +28,10 @@ func (r *Registry) SetEnabled(ctx context.Context, name string, on bool) error {
 	}
 
 	if !hasLoaded(r.all, name) {
+		if e, ok := brokenEntry(r.all, name); ok {
+			return fmt.Errorf("lexicon: dictionary %q is broken: %s", name, e)
+		}
+
 		return fmt.Errorf("%w: %s", ErrUnknownDictionary, name)
 	}
 
@@ -54,6 +60,18 @@ func hasLoaded(all []*dict, name string) bool {
 	}
 
 	return false
+}
+
+// brokenEntry returns the error text of the first entry named name that has
+// one; false when there is none.
+func brokenEntry(all []*dict, name string) (string, bool) {
+	for _, x := range all {
+		if x.entry.Name == name && x.entry.Error != "" {
+			return x.entry.Error, true
+		}
+	}
+
+	return "", false
 }
 
 // Reload rescans Options.Dir, reopens every dictionary, re-reads the state

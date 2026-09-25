@@ -3,6 +3,7 @@ package lexicon
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 )
 
@@ -123,5 +124,24 @@ func TestSetEnabledDuplicateName(t *testing.T) {
 
 	if n != 2 {
 		t.Fatalf("custom.x entries = %d, want 2: %+v", n, r.List())
+	}
+}
+
+// TestSetEnabledBroken: a name that exists only as a broken entry gets its
+// own error, not ErrUnknownDictionary; nothing is stored.
+func TestSetEnabledBroken(t *testing.T) {
+	dir := t.TempDir()
+	writeFile(t, dir, "custom.bad.dat", []byte("garbage"))
+
+	st := &MemState{}
+	r := openTest(t, dir, st)
+
+	err := r.SetEnabled(t.Context(), "custom.bad", false)
+	if err == nil || errors.Is(err, ErrUnknownDictionary) || !strings.Contains(err.Error(), `dictionary "custom.bad" is broken`) {
+		t.Fatalf("err = %v", err)
+	}
+
+	if m, _ := st.Enabled(t.Context()); len(m) != 0 {
+		t.Fatalf("state written: %v", m)
 	}
 }
