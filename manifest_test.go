@@ -75,3 +75,18 @@ func TestMergeManifest(t *testing.T) {
 		t.Fatal("mergeManifest modified the primary's Extra")
 	}
 }
+
+// TestMergeManifestExtraIndependent: the result's Extra is always an
+// independent clone, even when the fallback's Extra is empty — mutating it
+// must not change the primary's Extra (the primary's map must not be
+// aliased into the result).
+func TestMergeManifestExtraIndependent(t *testing.T) {
+	primary := Manifest{Extra: map[string]string{"note": "host"}}
+
+	got := mergeManifest(primary, Manifest{})
+	got.Extra["note"] = "mutated"
+
+	if primary.Extra["note"] != "host" {
+		t.Fatalf("mergeManifest aliased the primary's Extra: primary.Extra = %+v", primary.Extra)
+	}
+}

@@ -129,9 +129,15 @@ func mergeManifest(primary, fallback Manifest) Manifest {
 	m.URL = cmp.Or(m.URL, fallback.URL)
 	m.GeneratedFrom = cmp.Or(m.GeneratedFrom, fallback.GeneratedFrom)
 
-	if len(fallback.Extra) > 0 {
+	if len(primary.Extra) > 0 || len(fallback.Extra) > 0 {
 		m.Extra = maps.Clone(fallback.Extra)
+		if m.Extra == nil {
+			m.Extra = make(map[string]string, len(primary.Extra))
+		}
+
 		maps.Copy(m.Extra, primary.Extra)
+	} else {
+		m.Extra = nil
 	}
 
 	return m
