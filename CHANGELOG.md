@@ -5,6 +5,8 @@ Notable changes of the project are recorded in this file (format inspired by
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-09-25
+
 ### Added
 
 - `textnorm`: `Modern` and `PreReform` orthography rule sets with versions;
