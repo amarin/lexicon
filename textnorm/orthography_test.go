@@ -43,9 +43,12 @@ func TestOrthographyModern(t *testing.T) {
 		{"Кузнецо́в", "кузнецов"},
 		{"кр‐нин", "кр-нин"},
 		{"Kот", "кот"},
-		{"HOBЫЙ", "новый"},   // upper-case H, O, B fold before lower-casing
-		{"XIX-го", "xix-го"}, // a part without Cyrillic letters is untouched
-		{"MOCKBA", "mockba"}, // no Cyrillic letter at all: stays Latin
+		{"HOBЫЙ", "новый"},                            // upper-case H, O, B fold before lower-casing
+		{"XIX-го", "xix-го"},                          // a part without Cyrillic letters is untouched
+		{"MOCKBA", "mockba"},                          // no Cyrillic letter at all: stays Latin
+		{"\u041ao\u0301\u0442", "\u043a\u043e\u0442"}, // Latin o + U+0301 inside a Cyrillic word
+		{"\u041a\u00f3\u0442", "\u043a\u043e\u0442"},  // precomposed Latin ó
+		{"\u00f3", "o"},                               // no Cyrillic letter: stays Latin
 	}
 	for _, c := range cases {
 		if got := Orthography(Modern, c.in); got != c.want {

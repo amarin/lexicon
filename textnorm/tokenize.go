@@ -21,9 +21,10 @@ const zwj = '\u200d'
 //  4. extending code points (marks, format characters except U+200B, emoji
 //     modifiers) never start a token: they extend the preceding one, or are
 //     skipped after whitespace and at the start;
-//  5. whitespace (and U+200B) and control characters are not tokens; a line
-//     break sets SentenceEnd on the previous token, as do the punctuation
-//     tokens . ! ? ; ….
+//  5. whitespace (and U+200B) and control characters are not tokens; a
+//     blank line (two or more line breaks) or U+2029 PARAGRAPH SEPARATOR sets
+//     SentenceEnd on the previous token, as do the punctuation tokens
+//     . ! ? ; …; a single line break is an ordinary space.
 //
 // Grapheme clusters are approximated by rule 4 and the ZWJ/regional-indicator
 // rules; Prepend characters are not modelled.

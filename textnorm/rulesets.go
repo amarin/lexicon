@@ -3,7 +3,10 @@ package textnorm
 import "maps"
 
 // homoglyphs are Latin letters that look like Cyrillic ones; both rule sets
-// replace them inside Cyrillic word parts (Rules.Homoglyphs, decision D5).
+// replace them inside Cyrillic word parts (Rules.Homoglyphs, decision D5),
+// also when they carry combining marks (base letter after decomposition).
+// Rule-set versions: "2" added the homoglyph tables, "3" the fold of
+// homoglyphs with combining marks.
 var homoglyphs = map[rune]rune{
 	'A': 'А', 'a': 'а', 'B': 'В', 'C': 'С', 'c': 'с', 'E': 'Е', 'e': 'е',
 	'H': 'Н', 'K': 'К', 'k': 'к', 'M': 'М', 'O': 'О', 'o': 'о', 'P': 'Р',
@@ -14,7 +17,7 @@ var homoglyphs = map[rune]rune{
 // decomposition), U+2010 hyphen → '-', Latin homoglyphs inside Cyrillic words.
 var Modern = Rules{
 	Name:       "modern",
-	Version:    "2",
+	Version:    "3",
 	Letters:    map[rune]string{'‐': "-"},
 	KeepMarks:  []rune{'й'},
 	Homoglyphs: homoglyphs,
@@ -25,7 +28,7 @@ var Modern = Rules{
 // ї and ѷ need no entries: decomposition gives і and ѵ plus a dropped mark.
 var PreReform = Rules{
 	Name:    "prereform",
-	Version: "2",
+	Version: "3",
 	Letters: map[rune]string{
 		'ѣ': "е", 'і': "и", 'ѵ': "и",
 		'ѳ': "ф", 'ѡ': "о", 'ꙋ': "у", 'ѹ': "у", 'ѧ': "я", 'ѯ': "кс", 'ѱ': "пс",

@@ -285,6 +285,9 @@ func TestTokenizeScriptSplit(t *testing.T) {
 		{Modern, "Kот-Smith", []string{"Kот/cyrillic/кот", "-/none/", "Smith/latin/smith"}},
 		{Modern, "MOCKBA", []string{"MOCKBA/latin/mockba"}}, // no Cyrillic letter
 		{Modern, "αβγ", []string{"αβγ/mixed/αβγ"}},
+		// Latin o + U+0301 and precomposed ó: the base letter is a homoglyph.
+		{Modern, "\u041ao\u0301\u0442", []string{"\u041ao\u0301\u0442/cyrillic/\u043a\u043e\u0442"}},
+		{PreReform, "\u041a\u00f3\u0442", []string{"\u041a\u00f3\u0442/cyrillic/\u043a\u043e\u0442"}},
 	}
 	for _, c := range cases {
 		toks := Tokenize(c.r, c.text)

@@ -36,7 +36,7 @@ func TestRunAnalyzeFull(t *testing.T) {
 		t.Fatalf("stdout =\n%q\nwant\n%q", out.String(), want)
 	}
 
-	if !strings.Contains(errOut.String(), "base: no") || !strings.Contains(errOut.String(), "analyzer-2/modern-2/") {
+	if !strings.Contains(errOut.String(), "base: no") || !strings.Contains(errOut.String(), "analyzer-2/modern-3/") {
 		t.Fatalf("stderr %q", errOut.String())
 	}
 }

@@ -99,7 +99,7 @@ func foldHomoglyphs(h map[rune]rune, runes []rune) {
 
 		if isCyrillicPart(h, runes[i:j]) {
 			for k := i; k < j; k++ {
-				if m, ok := h[runes[k]]; ok {
+				if m, ok := homoglyphOf(h, runes[k]); ok {
 					runes[k] = m
 				}
 			}
@@ -116,7 +116,7 @@ func inWordPart(c rune) bool {
 }
 
 // isCyrillicPart reports whether a word part has at least one Cyrillic letter
-// and every other letter of it is a key of h (Rules.Homoglyphs). Non-letters
+// and every other letter of it is a homoglyph (homoglyphOf). Non-letters
 // (marks, format characters) are ignored.
 func isCyrillicPart(h map[rune]rune, part []rune) bool {
 	cyr := false
@@ -127,11 +127,44 @@ func isCyrillicPart(h map[rune]rune, part []rune) bool {
 		case unicode.Is(unicode.Cyrillic, c):
 			cyr = true
 		default:
-			if _, ok := h[c]; !ok {
+			if _, ok := homoglyphOf(h, c); !ok {
 				return false
 			}
 		}
 	}
 
 	return cyr
+}
+
+// homoglyphOf is the Cyrillic replacement of letter c: h[c], or h of its base
+// letter when c decomposes into a key of h plus combining marks (precomposed
+// «ó» after NFC of Latin o + U+0301). The marks are dropped: Orthography
+// removes them anyway, and no homoglyph base takes a kept mark (й).
+func homoglyphOf(h map[rune]rune, c rune) (rune, bool) {
+	if m, ok := h[c]; ok {
+		return m, true
+	}
+
+	if c < utf8.RuneSelf {
+		return 0, false
+	}
+
+	var enc [utf8.UTFMax]byte
+
+	d := norm.NFD.String(string(utf8.AppendRune(enc[:0], c)))
+
+	base, n := utf8.DecodeRuneInString(d)
+	if n == len(d) {
+		return 0, false
+	}
+
+	for _, x := range d[n:] {
+		if !unicode.IsMark(x) {
+			return 0, false
+		}
+	}
+
+	m, ok := h[base]
+
+	return m, ok
 }
