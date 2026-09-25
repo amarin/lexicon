@@ -19,16 +19,23 @@ Project instructions for AI agents (Codex, Claude, LGTM).
   main function; snake_case file names.
 - Dependencies between packages are interfaces declared in the consumer's `deps.go`.
   No mockgen: tests use small hand-written fakes in `*_test.go`.
-- Library dependencies: gomorphy and `golang.org/x/text` only. Tests: stdlib
-  `testing` only. A new dependency needs the owner's approval.
+- Library dependencies: the root package `lexicon` (and `textnorm`) imports only
+  `github.com/amarin/gomorphy/pkg/morphology` and `golang.org/x/text` (check with
+  `go list -deps .`). `basefetch` — and through it `cmd/lexicon` — additionally
+  imports `gomorphy/pkg/pymorphy` and `github.com/amarin/logging` (which pull zap);
+  hosts that do not import `basefetch` never compile them. Tests: stdlib `testing`
+  only. A new dependency needs the owner's approval.
 - Go version policy: `go` directive = current Go minus two minor versions
   (`go 1.25.0`, `toolchain go1.27.1` as of 2026-09); dependency updates must not
   raise it. Language/library features newer than 1.25 are not used.
 - Offsets contract (binding): offsets refer to the input string exactly as passed;
   byte and code-point offsets on every token; boundaries on grapheme clusters;
   `input[Start:End] == Raw`. Never return offsets into a normalized string.
-- Changing a table in `textnorm.Modern`/`textnorm.PreReform` requires bumping its
-  `Version` (hosts reindex).
+- Changing a table in `textnorm.Modern`/`textnorm.PreReform`, or any rule that changes
+  their output, requires bumping its `Version`; changing analyzer rules that change
+  produced terms requires bumping `analyzerVersion` (hosts reindex). Host profile
+  definitions are not part of `Analyzer.Version`: hosts version their profiles
+  themselves.
 
 ## Main commands
 - `go build ./...`, `go vet ./...`, `gofmt -l .` (must be empty).

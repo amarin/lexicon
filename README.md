@@ -83,7 +83,7 @@ name := lexicon.Profile{
 }
 terms := a.Analyze("Кузнецова Ивана", name, lexicon.ModeIndex)
 query := a.ParseQuery("Кузнецов", name) // OR of lemma variants, for a search box
-version := a.Version() // store with derived data; recompute when it changes
+version := a.Version() // store with derived data; recompute when it changes (profiles: version them yourself)
 ```
 
 Replace dictionary files atomically (write a temporary file, rename), then call

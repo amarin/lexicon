@@ -64,9 +64,10 @@ func (a *Analyzer) Analyze(text string, p Profile, m Mode) []Term {
 	return out
 }
 
-// Version identifies everything that determines terms: analyzer rules,
+// Version identifies what the library contributes to terms: analyzer rules,
 // orthography rule set and the dictionary set. Hosts store it with derived
-// data and recompute on change.
+// data and recompute on change. Profiles are host definitions and are not
+// part of Version: a host that changes a profile versions it itself.
 func (a *Analyzer) Version() string {
 	return "analyzer-" + analyzerVersion + "/" + a.rules.Name + "-" + a.rules.Version + "/" + a.dicts.Version()
 }
