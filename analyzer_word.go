@@ -7,9 +7,23 @@ import (
 	"github.com/amarin/lexicon/textnorm"
 )
 
-// word is the analysis of a single form under profile p (cached from Task 10).
+// word is the analysis of a single form under profile p, cached by profile
+// name and form; the result is a copy the caller may modify.
 func (a *Analyzer) word(form string, p Profile) wordResult {
-	return a.lookupWord(form, p)
+	c := a.cacheAt()
+	if c == nil || p.Name == "" {
+		return a.lookupWord(form, p)
+	}
+
+	key := p.Name + "\x00" + form
+	if r, ok := c.get(key); ok {
+		return r.clone()
+	}
+
+	r := a.lookupWord(form, p)
+	c.put(key, r)
+
+	return r.clone()
 }
 
 // lookupWord: exact readings (trying pre-reform ending variants when there are

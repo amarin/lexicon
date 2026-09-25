@@ -13,11 +13,32 @@ const analyzerVersion = "1"
 type Analyzer struct {
 	dicts Dictionaries
 	rules textnorm.Rules
+	cache *lemmaCache // nil when disabled
 }
 
 // NewAnalyzer returns an analyzer over d with orthography rules r.
 func NewAnalyzer(d Dictionaries, r textnorm.Rules, opts AnalyzerOptions) *Analyzer {
-	return &Analyzer{dicts: d, rules: r}
+	a := &Analyzer{dicts: d, rules: r}
+
+	size := opts.CacheSize
+	if size == 0 {
+		size = DefaultCacheSize
+	}
+
+	if size > 0 {
+		a.cache = newLemmaCache(size)
+	}
+
+	return a
+}
+
+// cacheAt is the lemma cache of the current dictionary set; nil when disabled.
+func (a *Analyzer) cacheAt() *lru {
+	if a.cache == nil {
+		return nil
+	}
+
+	return a.cache.at(a.dicts.Version())
 }
 
 // Analyze returns the terms of text under profile p: in ModeIndex the index

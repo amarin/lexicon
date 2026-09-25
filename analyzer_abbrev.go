@@ -7,9 +7,22 @@ import "unicode/utf8"
 var abbrevKinds = []Kind{KindAbbrev}
 
 // abbrev returns the lemmas of an abbreviation key («кр-нин», «с.»); nil when
-// the key is not an abbreviation (cached from Task 10).
+// the key is not an abbreviation. Cached independently of the profile.
 func (a *Analyzer) abbrev(key string) []Lemma {
-	return a.lookupAbbrev(key)
+	c := a.cacheAt()
+	if c == nil {
+		return a.lookupAbbrev(key)
+	}
+
+	ck := "\x00abbrev\x00" + key
+	if r, ok := c.get(ck); ok {
+		return r.clone().lemmas
+	}
+
+	r := wordResult{lemmas: a.lookupAbbrev(key)}
+	c.put(ck, r)
+
+	return r.clone().lemmas
 }
 
 // lookupAbbrev: exact readings of abbreviation dictionaries only.
