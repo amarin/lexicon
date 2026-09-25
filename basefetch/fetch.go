@@ -6,7 +6,9 @@
 package basefetch
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 
@@ -66,8 +68,9 @@ func Fetch(dst string) (string, error) {
 
 // finalize places the compiled dictionary and its manifest sidecar next to
 // dst, given the already-saved dictionary temp file datTmp. It writes the
-// manifest to its own temp file first, then renames the dictionary tmp into
-// place before the manifest tmp (owner ruling): a resulting .dat without a
+// manifest to its own temp file first, removes a stale final manifest, then
+// renames the dictionary tmp into place before the manifest tmp (owner
+// ruling): a resulting .dat without a
 // .meta is acceptable, since the registry falls back to gomorphy BuildInfo,
 // but a final .meta must never exist without its .dat. On any error it
 // removes whichever temp files still exist.
@@ -86,6 +89,15 @@ func finalize(datTmp, dst, version string) error {
 		_ = os.Remove(datTmp)
 
 		return err
+	}
+
+	// A stale sidecar must never describe the new dictionary: remove it
+	// before the new .dat takes its place.
+	if err := os.Remove(metaPath); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		_ = os.Remove(datTmp)
+		_ = os.Remove(metaTmp)
+
+		return fmt.Errorf("basefetch: remove stale manifest: %w", err)
 	}
 
 	if err := os.Rename(datTmp, dst); err != nil {

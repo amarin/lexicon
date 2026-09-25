@@ -2,7 +2,6 @@ package basefetch
 
 import (
 	"bytes"
-	"os"
 
 	"github.com/amarin/lexicon"
 )
@@ -27,20 +26,4 @@ func manifestBytes(version string) ([]byte, error) {
 	}
 
 	return b.Bytes(), nil
-}
-
-// writeManifest writes the sidecar atomically (own temp file, then rename to
-// path).
-func writeManifest(path, version string) error {
-	data, err := manifestBytes(version)
-	if err != nil {
-		return err
-	}
-
-	tmp := path + ".tmp"
-	if err := os.WriteFile(tmp, data, 0o644); err != nil {
-		return err
-	}
-
-	return os.Rename(tmp, path)
 }

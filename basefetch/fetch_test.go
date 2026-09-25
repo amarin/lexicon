@@ -42,3 +42,33 @@ func TestFinalizeRenameFailureCleansUp(t *testing.T) {
 		t.Fatalf("meta file created despite dat rename failure: %v", err)
 	}
 }
+
+// TestFinalizeRemovesStaleManifest: a stale final .meta is removed before the
+// new .dat is renamed into place, so it never describes the new dictionary —
+// here the rename fails and the stale sidecar is gone anyway.
+func TestFinalizeRemovesStaleManifest(t *testing.T) {
+	dir := t.TempDir()
+
+	datTmp := filepath.Join(dir, "base.dat.tmp")
+	if err := os.WriteFile(datTmp, []byte("fake dict"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	dst := filepath.Join(dir, "base.dat")
+	if err := os.Mkdir(dst, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	stale := lexicon.ManifestPath(dst)
+	if err := os.WriteFile(stale, []byte("version: old\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := finalize(datTmp, dst, "1.2.3"); err == nil {
+		t.Fatal("finalize: want error when dst cannot be renamed onto")
+	}
+
+	if _, err := os.Stat(stale); !os.IsNotExist(err) {
+		t.Fatalf("stale manifest kept: %v", err)
+	}
+}
