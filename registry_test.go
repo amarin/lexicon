@@ -406,3 +406,46 @@ func TestBaseManifest(t *testing.T) {
 		t.Fatalf("file base %+v must not take BaseManifest", e)
 	}
 }
+
+// TestSymlinkedFiles: a symbolic link to a dictionary file is followed; a
+// dangling link is listed with an error and does not take part in parsing.
+func TestSymlinkedFiles(t *testing.T) {
+	src := t.TempDir()
+	target := writeFile(t, src, "real.dat", datBytes(t, surnameForms))
+
+	dir := t.TempDir()
+	if err := os.Symlink(target, filepath.Join(dir, "surname.linked.dat")); err != nil {
+		t.Skipf("symlinks unsupported: %v", err)
+	}
+
+	if err := os.Symlink(filepath.Join(src, "missing.dat"), filepath.Join(dir, "surname.dangling.dat")); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.Symlink(src, filepath.Join(dir, "surname.dir.dat")); err != nil {
+		t.Fatal(err)
+	}
+
+	r := openTest(t, dir, nil)
+
+	byName := map[string]Entry{}
+	for _, e := range r.List() {
+		byName[e.Name] = e
+	}
+
+	if e, ok := byName["surname.linked"]; !ok || e.Error != "" {
+		t.Fatalf("linked file: %+v", r.List())
+	}
+
+	if e, ok := byName["surname.dangling"]; !ok || e.Error == "" {
+		t.Fatalf("dangling link: %+v", r.List())
+	}
+
+	if _, ok := byName["surname.dir"]; ok {
+		t.Fatalf("link to a directory listed: %+v", r.List())
+	}
+
+	if got := exact(r.Parse("кузнецов", []Kind{"surname"})); len(got) != 1 {
+		t.Fatalf("Parse(кузнецов) = %+v", got)
+	}
+}

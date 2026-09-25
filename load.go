@@ -79,8 +79,8 @@ func load(ctx context.Context, o Options) ([]*dict, error) {
 }
 
 // scanDir opens the .dat and .tsv files of dir sorted by name; a missing dir
-// is empty. Invalid names, undeclared kinds and duplicates are listed with an
-// error, unopened.
+// is empty. Symbolic links are followed. Invalid names, undeclared kinds,
+// duplicates and dangling links are listed with an error, unopened.
 func scanDir(dir string, kinds kindSet) ([]*dict, error) {
 	if dir == "" {
 		return nil, nil
@@ -101,12 +101,25 @@ func scanDir(dir string, kinds kindSet) ([]*dict, error) {
 
 	for _, it := range items {
 		ext := filepath.Ext(it.Name())
-		if !it.Type().IsRegular() || (ext != ".dat" && ext != ".tsv") {
+		if ext != ".dat" && ext != ".tsv" {
 			continue
 		}
 
 		path := filepath.Join(dir, it.Name())
 		name := strings.TrimSuffix(it.Name(), ext)
+
+		regular, statErr := isRegularFile(it, path)
+		if statErr != nil {
+			x := newDict(Entry{Name: name, Origin: path, Enabled: true})
+			x.entry.Error = fmt.Sprintf("lexicon: dictionary file %q: %v", name, statErr)
+			out = append(out, x)
+
+			continue
+		}
+
+		if !regular {
+			continue
+		}
 
 		if seen[name] {
 			x := newDict(Entry{Name: name, Origin: path, Enabled: true})
@@ -123,6 +136,22 @@ func scanDir(dir string, kinds kindSet) ([]*dict, error) {
 	slices.SortStableFunc(out, func(a, b *dict) int { return strings.Compare(a.entry.Name, b.entry.Name) })
 
 	return out, nil
+}
+
+// isRegularFile reports whether a directory item is a regular file, following
+// a symbolic link (os.Stat); the error is that of a dangling or unreadable
+// link.
+func isRegularFile(it fs.DirEntry, path string) (bool, error) {
+	if it.Type()&fs.ModeSymlink == 0 {
+		return it.Type().IsRegular(), nil
+	}
+
+	info, err := os.Stat(path)
+	if err != nil {
+		return false, err
+	}
+
+	return info.Mode().IsRegular(), nil
 }
 
 // loadFile opens one directory file; its sidecar manifest, if any, wins over
