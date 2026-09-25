@@ -112,7 +112,7 @@ func foldHomoglyphs(h map[rune]rune, runes []rune) {
 // inWordPart reports whether c continues a word part: a letter, a combining
 // mark or a format character other than U+200B.
 func inWordPart(c rune) bool {
-	return unicode.IsLetter(c) || unicode.IsMark(c) || (unicode.Is(unicode.Cf, c) && c != '​')
+	return unicode.IsLetter(c) || unicode.IsMark(c) || (unicode.Is(unicode.Cf, c) && c != '\u200b')
 }
 
 // isCyrillicPart reports whether a word part has at least one Cyrillic letter

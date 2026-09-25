@@ -21,7 +21,7 @@ func TestOrthographyPreReform(t *testing.T) {
 		{"Mississippi", "mississippi"}, // no Cyrillic letter: Latin i stays Latin
 		{"Kот", "кот"},                 // Latin K: homoglyph inside a Cyrillic word
 		{"Kотw", "kотw"},               // w is not a homoglyph: nothing replaced
-		{"Пет­ров", "петров"},          // soft hyphen (format character) dropped
+		{"Пет\u00adров", "петров"},     // soft hyphen (format character) dropped
 	}
 	for _, c := range cases {
 		if got := Orthography(PreReform, c.in); got != c.want {
