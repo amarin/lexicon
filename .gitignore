@@ -1,1 +1,9 @@
 .idea/
+
+# Generated dictionaries are never committed.
+*.dat
+*.dat.tmp
+# Binary built by `go build ./cmd/lexicon` in the repository root.
+/lexicon
+*.test
+*.out
