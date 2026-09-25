@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -13,8 +14,13 @@ import (
 	"github.com/amarin/lexicon/basefetch"
 )
 
-// runDicts: dicts list | dicts fetch.
-func runDicts(ctx context.Context, args []string, stdout, stderr io.Writer) error {
+// fetch downloads the base dictionary; a seam so tests can fake it without
+// touching the network.
+var fetch = basefetch.Fetch
+
+// runDicts: dicts list | dicts fetch. A Close error from the registry (list
+// path) is joined into the result so it is never silently dropped.
+func runDicts(ctx context.Context, args []string, stdout, stderr io.Writer) (err error) {
 	if len(args) == 0 {
 		return usageError{"dicts: expected list or fetch"}
 	}
@@ -28,7 +34,11 @@ func runDicts(ctx context.Context, args []string, stdout, stderr io.Writer) erro
 	fs.SetOutput(stderr)
 
 	dir := fs.String("dicts", defaultDictsDir(), "dictionary directory")
-	force := fs.Bool("force", false, "fetch: download again even if the file exists")
+
+	var force *bool
+	if sub == "fetch" {
+		force = fs.Bool("force", false, "download again even if the file exists")
+	}
 
 	if err := parseFlags(fs, args[1:]); err != nil {
 		return err
@@ -44,7 +54,9 @@ func runDicts(ctx context.Context, args []string, stdout, stderr io.Writer) erro
 	if err != nil {
 		return err
 	}
-	defer reg.Close()
+	defer func() {
+		err = errors.Join(err, reg.Close())
+	}()
 
 	return printDicts(stdout, reg)
 }
@@ -58,7 +70,7 @@ func fetchBase(w io.Writer, dir string, force bool) error {
 		return nil
 	}
 
-	version, err := basefetch.Fetch(dst)
+	version, err := fetch(dst)
 	if err != nil {
 		return err
 	}

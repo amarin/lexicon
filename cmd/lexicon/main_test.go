@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/amarin/lexicon/basefetch"
 )
 
 // givenDir is a dictionary directory with one TSV given-name dictionary.
@@ -53,15 +55,111 @@ func TestRunDictsList(t *testing.T) {
 	}
 }
 
+// TestRunDictsFetchExisting: dicts fetch on a directory that already has the
+// base dictionary must not touch the network and must leave the file
+// byte-identical.
+func TestRunDictsFetchExisting(t *testing.T) {
+	dir := t.TempDir()
+	dst := filepath.Join(dir, basefetch.DefaultName)
+	want := []byte("stub-existing-bytes")
+
+	if err := os.WriteFile(dst, want, 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	orig := fetch
+	fetch = func(string) (string, error) {
+		t.Fatal("fetch must not be called without --force when the file already exists")
+
+		return "", nil
+	}
+	t.Cleanup(func() { fetch = orig })
+
+	var out, errOut bytes.Buffer
+	if code := run(t.Context(), []string{"dicts", "fetch", "--dicts", dir}, &out, &errOut); code != 0 {
+		t.Fatalf("exit %d, stderr %s", code, errOut.String())
+	}
+
+	if !strings.Contains(out.String(), "already present") || !strings.Contains(out.String(), "--force") {
+		t.Errorf("stdout %q lacks the exists/--force message", out.String())
+	}
+
+	got, err := os.ReadFile(dst)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !bytes.Equal(got, want) {
+		t.Errorf("file changed: got %q, want %q", got, want)
+	}
+}
+
+// TestRunDictsFetchForce: --force calls the fetcher exactly once with the
+// expected destination, even though a file is already there; no real
+// download happens (the fetch seam is faked).
+func TestRunDictsFetchForce(t *testing.T) {
+	dir := t.TempDir()
+	dst := filepath.Join(dir, basefetch.DefaultName)
+
+	if err := os.WriteFile(dst, []byte("old"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	var calls int
+
+	var gotDst string
+
+	orig := fetch
+	fetch = func(d string) (string, error) {
+		calls++
+		gotDst = d
+
+		if err := os.WriteFile(d, []byte("stub-fetched-bytes"), 0o644); err != nil {
+			return "", err
+		}
+
+		return "1.0.0-test", nil
+	}
+	t.Cleanup(func() { fetch = orig })
+
+	var out, errOut bytes.Buffer
+	if code := run(t.Context(), []string{"dicts", "fetch", "--dicts", dir, "--force"}, &out, &errOut); code != 0 {
+		t.Fatalf("exit %d, stderr %s", code, errOut.String())
+	}
+
+	if calls != 1 {
+		t.Fatalf("fetch called %d times, want 1", calls)
+	}
+
+	if gotDst != dst {
+		t.Errorf("fetch dst = %q, want %q", gotDst, dst)
+	}
+
+	got, err := os.ReadFile(dst)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if string(got) != "stub-fetched-bytes" {
+		t.Errorf("file = %q, want the fake fetcher's stub bytes", got)
+	}
+
+	if !strings.Contains(out.String(), "1.0.0-test") {
+		t.Errorf("stdout %q lacks the fetched version", out.String())
+	}
+}
+
 func TestRunUsage(t *testing.T) {
 	cases := map[string][]string{
-		"no command":      nil,
-		"unknown command": {"nope"},
-		"no text":         {"analyze", "--dicts", t.TempDir()},
-		"bad mode":        {"analyze", "--mode", "x", "кот"},
-		"bad flag":        {"analyze", "--nope", "кот"},
-		"no subcommand":   {"dicts"},
-		"bad subcommand":  {"dicts", "enable"},
+		"no command":                 nil,
+		"unknown command":            {"nope"},
+		"no text":                    {"analyze", "--dicts", t.TempDir()},
+		"bad mode":                   {"analyze", "--mode", "x", "кот"},
+		"bad flag":                   {"analyze", "--nope", "кот"},
+		"no subcommand":              {"dicts"},
+		"bad subcommand":             {"dicts", "enable"},
+		"dicts fetch bad flag":       {"dicts", "fetch", "--dicts", t.TempDir(), "--nope"},
+		"dicts list rejects --force": {"dicts", "list", "--dicts", t.TempDir(), "--force"},
 	}
 	for name, args := range cases {
 		var out, errOut bytes.Buffer

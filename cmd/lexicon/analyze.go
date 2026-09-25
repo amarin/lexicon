@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -11,8 +12,9 @@ import (
 )
 
 // runAnalyze prints the terms of the text; the dictionary summary and the
-// analyzer version go to stderr.
-func runAnalyze(ctx context.Context, args []string, stdout, stderr io.Writer) error {
+// analyzer version go to stderr. A Close error is joined into the result so
+// it is never silently dropped.
+func runAnalyze(ctx context.Context, args []string, stdout, stderr io.Writer) (err error) {
 	fs := flag.NewFlagSet("analyze", flag.ContinueOnError)
 	fs.SetOutput(stderr)
 
@@ -51,7 +53,9 @@ func runAnalyze(ctx context.Context, args []string, stdout, stderr io.Writer) er
 	if err != nil {
 		return err
 	}
-	defer reg.Close()
+	defer func() {
+		err = errors.Join(err, reg.Close())
+	}()
 
 	a := lexicon.NewAnalyzer(reg, rules, lexicon.AnalyzerOptions{})
 	formatTerms(stdout, a.Analyze(text, p, m))
