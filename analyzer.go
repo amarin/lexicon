@@ -20,11 +20,23 @@ func NewAnalyzer(d Dictionaries, r textnorm.Rules, opts AnalyzerOptions) *Analyz
 	return &Analyzer{dicts: d, rules: r}
 }
 
-// Analyze returns the terms of text under profile p.
+// Analyze returns the terms of text under profile p: in ModeIndex the index
+// terms (genodex P1), otherwise exactly one term per token.
 func (a *Analyzer) Analyze(text string, p Profile, m Mode) []Term {
+	toks := textnorm.Tokenize(a.rules, text)
+
+	if m != ModeIndex {
+		out := make([]Term, len(toks))
+		for i, tok := range toks {
+			out[i] = a.fullTerm(tok, p)
+		}
+
+		return out
+	}
+
 	var out []Term
 
-	for _, tok := range textnorm.Tokenize(a.rules, text) {
+	for _, tok := range toks {
 		out = append(out, a.indexTerms(tok, p)...)
 	}
 
