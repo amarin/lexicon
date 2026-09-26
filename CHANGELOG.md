@@ -5,6 +5,42 @@ Notable changes of the project are recorded in this file (format inspired by
 
 ## [Unreleased]
 
+### Added
+
+- `gazetteer`: `Entry`/`EntryFlag` (`RequiresContext`, `SurfaceOnly`,
+  `CaseSensitive`, `Blocked`); `TSVSource` (files or in-memory data via
+  `NewTSVSourceData`, `# key: value` manifest, bad lines listed not fatal)
+  and `SliceSource`; a process-wide interner; per-source token tries over
+  lemma and surface keys (lemma keys expand combinations, capped at 8);
+  zero-allocation matching from every token, branching over lemma
+  alternatives, bounded by the longest alias and sentence ends, overlaps
+  allowed; variant groups (`Canonical`, `Expand`) by `(source, Ref)`;
+  `TypeProfiles`; versioned `Snapshot` swapped atomically on `Refresh`/
+  `RefreshSource`; a build report (entries, aliases, keys, capped, blocked,
+  duration, errors).
+- `rules`: `RuleSet`/`When`, `Hint`, `Trigger` compiled into a `Book`;
+  YAML (`go.yaml.in/yaml/v3`) and JSON rule files with a top-level `meta:`
+  manifest and tag-gated rule sets; `Load`/`LoadNamed`/`LoadFile` errors
+  carry `<file>:<line>` (`Compile` errors additionally `<set>/<rule>`).
+- `ner`: the extraction pipeline — `Doc`, `Span`, `SpanFlag`, `Result`,
+  `Config` (weights, `Nesting`), `New`/`Extract`, `Explain`; filters
+  (`Blocked`, `RequiresContext`, `CaseSensitive`, `MinLemmaMatchRunes`);
+  hints and triggers with context windows, absorption and boosts, gated
+  by negative triggers; scoring (surface > lemma > trigger, length, type
+  weight, evidence, ambiguity penalty, ties broken by type name); weighted
+  interval scheduling over overlapping spans with configurable nesting;
+  same-range losers of other types kept as `Span.Alternatives`; a `Types`
+  filter applied after resolution; one pinned dictionary/gazetteer snapshot
+  per `Extract` call, safe for concurrent use.
+- `nertest`: a golden-JSONL test harness (`Case`, `Run`) reporting strict
+  and partial precision/recall/F1 per entity type; `Case.Context` for
+  host document metadata plus `WithTags` to derive rule-set tags from it.
+- CLI: `lexicon extract` (text args or `-` for stdin, one document per
+  line; table or JSONL output, `--gazetteer`, `--rules`, `--nest`,
+  `--tags`, `--types`, `--explain`) and `lexicon golden` (`--cases`,
+  `--min-precision`, `--min-recall`).
+- New dependency: `go.yaml.in/yaml/v3` (v3.0.5), for `rules` YAML files.
+
 ### Documentation
 
 - Usage scenarios — what each feature is for, since which version, with

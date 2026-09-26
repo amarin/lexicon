@@ -16,7 +16,15 @@ Project instructions for AI agents (Codex, Claude, LGTM).
 - Packages: `textnorm` (orthography rule sets, tokenizer with byte + rune offsets,
   pre-reform endings; no dictionaries), root package `lexicon` (dictionary registry,
   profiles, `Analyzer`), `basefetch` (optional: download and compile the OpenCorpora
-  base dictionary; imports gomorphy's pymorphy loader), `cmd/lexicon` (CLI).
+  base dictionary; imports gomorphy's pymorphy loader), `cmd/lexicon` (CLI). From
+  v0.2: `gazetteer` (TSV/in-memory alias sources compiled into versioned trie
+  snapshots, zero-allocation matching), `rules` (YAML/JSON rule books: hints,
+  triggers, tag-gated rule sets), `ner` (the extraction pipeline — `Doc`, `Span`,
+  `Result`, filters, scoring, overlap resolution — built on `gazetteer` and
+  `rules`), `nertest` (golden-JSONL test harness with strict/partial
+  precision/recall), and `internal/fakedict` (the `lexicon.Dictionaries`/
+  `Analyzer` test fixture shared by `gazetteer`, `ner` and `nertest` tests, not
+  part of the public API).
 
 ## Conventions
 - Code comments, error texts, docs, CLI output: English. Test fixtures: Russian text.
@@ -30,8 +38,12 @@ Project instructions for AI agents (Codex, Claude, LGTM).
   `github.com/amarin/gomorphy/pkg/morphology` and `golang.org/x/text` (check with
   `go list -deps .`). `basefetch` — and through it `cmd/lexicon` — additionally
   imports `gomorphy/pkg/pymorphy` and `github.com/amarin/logging` (which pull zap);
-  hosts that do not import `basefetch` never compile them. Tests: stdlib `testing`
-  only. A new dependency needs the owner's approval.
+  hosts that do not import `basefetch` never compile them. `gazetteer` imports
+  only the root `lexicon` package and `textnorm` — no yaml, no new dependency.
+  `rules` — and through it `ner`, `nertest` and `cmd/lexicon` — additionally
+  imports `go.yaml.in/yaml/v3` (v3.0.5, added in v0.2 for rule files; check with
+  `go list -f '{{join .Imports "\n"}}' ./<pkg>`). Tests: stdlib `testing` only.
+  A new dependency needs the owner's approval.
 - Go version policy: `go` directive = current Go minus two minor versions
   (`go 1.25.0`, `toolchain go1.27.1` as of 2026-09); dependency updates must not
   raise it. Language/library features newer than 1.25 are not used.
@@ -51,19 +63,24 @@ Project instructions for AI agents (Codex, Claude, LGTM).
     (a "Behaviour in X" line becomes history when it changes) and marks
     ⚠ reindex when it bumps `Rules.Version` or `analyzerVersion`; CHANGELOG stays
     the source of truth;
-  - README marks features with the version they appear in (`*(0.1.0)*`,
-    `*(planned: 0.2)*`).
+  - README marks features with the version they appear in (`*(0.1.0)*`;
+    implemented but not yet released: `*(unreleased: 0.2)*`; `*(planned: 0.3)*`).
 
 ## Main commands
 - `go build ./...`, `go vet ./...`, `gofmt -l .` (must be empty).
 - `go test ./... -count=1`; `go test -race ./... -count=1` (includes `go test ./examples/`,
   which builds and runs every example with an `// Output:` block; `-short` skips it).
-- `go test ./textnorm/ -run '^$' -fuzz FuzzTokenize -fuzztime 30s` — one fuzz target per run.
+- `go test ./textnorm/ -run '^$' -fuzz FuzzTokenize -fuzztime 30s`,
+  `go test ./ner/ -run '^$' -fuzz FuzzExtractOffsets -fuzztime 30s` — one fuzz target per run.
 - `go test ./... -run '^$' -bench . -benchmem` — benchmarks.
 - `LEXICON_BASE_DAT=/path/base.opencorpora.dat go test -tags integration ./... -count=1` —
   tests with the real base dictionary (`LEXICON_FETCH=1` also exercises the download).
 - `go run ./cmd/lexicon analyze [--dicts DIR] [--ortho modern|prereform] [--profile SPEC] [--mode index|full] TEXT...`
 - `go run ./cmd/lexicon dicts list|fetch [--dicts DIR]`
+- `go run ./cmd/lexicon extract [--dicts DIR] [--ortho modern|prereform] [--gazetteer FILE...] [--rules FILE...] [--nest outer>inner...] [--tags T,...] [--types T,...] [--explain] [--format table|jsonl] TEXT...|-` —
+  NER over CLI args or stdin (`-`, one document per line).
+- `go run ./cmd/lexicon golden [--dicts DIR] [--ortho modern|prereform] [--gazetteer FILE...] [--rules FILE...] --cases CASES.jsonl [--min-precision N] [--min-recall N]` —
+  run a golden-JSONL case set and report strict/partial precision/recall per type.
 - `go run ./examples/<name>` — runnable examples (`examples/README.md`).
 
 ## Sibling modules during development
@@ -82,7 +99,8 @@ Project instructions for AI agents (Codex, Claude, LGTM).
 - Stage only files you changed yourself (`git add <paths>`, not `git add -A`).
 
 ## When to ask the owner
-- Changing exported API of `textnorm`, `lexicon` or `basefetch` once a host depends on it.
+- Changing exported API of `textnorm`, `lexicon`, `basefetch`, `gazetteer`, `rules`
+  or `ner` once a host depends on it.
 - Changing orthography tables or analyzer behaviour that changes index terms
   (hosts must reindex).
 - Adding a dependency.

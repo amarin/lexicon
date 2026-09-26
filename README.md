@@ -17,15 +17,16 @@ a document:
   profile for each field (names, places, general vocabulary); pre-reform
   adjective endings and abbreviations of records; search-index terms,
   search-query parsing and per-token markup from one analyzer.
-- **Dictionary NER** *(planned: 0.2, patterns 0.3)*. Multi-word aliases
-  matched by lemmas or surface forms, variant groups, abbreviation hints,
-  trigger words, and pattern rules switched on by document tags.
+- **Dictionary NER** *(unreleased: 0.2)*. Multi-word
+  aliases matched by lemmas or surface forms, variant groups, abbreviation
+  hints, trigger words and rule sets switched on by document tags *(0.2)*;
+  pattern rules *(planned: 0.3)*.
   Overlapping matches are resolved, and every span can explain why it was
   produced.
 - **Dictionaries as data.** Morphology dictionaries are gomorphy `.dat` or
   TSV files with provenance manifests, switched on and off and hot-reloaded
   without locking readers *(0.1.0)*. Gazetteers as TSV and rules as YAML,
-  rebuilt one source in milliseconds and swapped in atomically *(planned:
+  rebuilt one source in milliseconds and swapped in atomically *(unreleased:
   0.2)*.
 
 What each feature is for, how to use it and since which version:
@@ -37,13 +38,13 @@ What each feature is for, how to use it and since which version:
   query time *(0.1.0)*
 - Entity extraction from archival and historical documents (parish
   registers, censuses, letters) — the text analysis *(0.1.0)*, dictionary
-  NER *(planned: 0.2)*
+  NER *(unreleased: 0.2)*
 - Genealogy and digital-humanities tools
 - Pre-annotation of text before human review, or a lightweight provider
   inside a larger NER pipeline — per-token markup *(0.1.0)*, entity spans
-  *(planned: 0.2)*
+  *(unreleased: 0.2)*
 - Domain-specific NER where you control the entity types and dictionaries
-  *(planned: 0.2)*
+  *(unreleased: 0.2)*
 
 lexicon only marks up text. It does not link the spans it finds to your
 data: resolving a mention to a specific person or place, storing the
@@ -54,8 +55,11 @@ annotations and exposing an HTTP or MCP API are left to the host application.
 0.1.0 is released: text analysis — `textnorm` orthography and
 tokenization, the dictionary `Registry`, and the `Analyzer` (`ModeIndex`,
 `ModeFull`, `ParseQuery`), plus `basefetch` and the `lexicon` CLI.
-Dictionary NER (gazetteers, rules, `lexicon extract`) is planned for 0.2,
-patterns for 0.3 — see the [roadmap](docs/todo.md).
+
+Dictionary NER is implemented and unreleased (0.2): `gazetteer`, `rules`,
+`ner`, `nertest`, and the `lexicon extract`/`lexicon golden` CLI commands.
+Rule sets scoped by document tags (`When`, `Book.Active`) ship in 0.2;
+pattern-based facts are planned for 0.3 — see the [roadmap](docs/todo.md).
 
 ## Installation
 
@@ -110,6 +114,8 @@ go run ./cmd/lexicon dicts fetch                      # base dictionary into ~/.
 go run ./cmd/lexicon dicts list
 go run ./cmd/lexicon analyze --ortho prereform "Кр-нин с. Покровскаго, 1834 г."
 go run ./cmd/lexicon analyze --mode full --profile 'name:base[Name|Surn|Patr],surname' "У Ивана сын Петр"
+go run ./cmd/lexicon extract --gazetteer place.tsv --rules place.yaml "деревня Покровское"  # unreleased, 0.2
+go run ./cmd/lexicon golden --gazetteer place.tsv --rules place.yaml --cases cases.jsonl    # unreleased, 0.2
 ```
 
 Flags, output format and sample output: [CLI](docs/en/cli.md).
@@ -131,7 +137,7 @@ English only. Index: [docs/en/index.md](docs/en/index.md),
 |---|---|---|
 | Usage scenarios: what each feature is for, since which version | [docs/en/scenarios.md](docs/en/scenarios.md) | [docs/ru/scenarios.md](docs/ru/scenarios.md) |
 | Installation | [docs/en/installation.md](docs/en/installation.md) | [docs/ru/installation.md](docs/ru/installation.md) |
-| CLI: `analyze`, `dicts list`, `dicts fetch` | [docs/en/cli.md](docs/en/cli.md) | [docs/ru/cli.md](docs/ru/cli.md) |
+| CLI: `analyze`, `dicts list`, `dicts fetch`, `extract`, `golden` | [docs/en/cli.md](docs/en/cli.md) | [docs/ru/cli.md](docs/ru/cli.md) |
 | Library reference: packages, types, contracts | [docs/en/library.md](docs/en/library.md) | [docs/ru/library.md](docs/ru/library.md) |
 | Runnable examples | [examples/](examples/README.md) | — |
 | Roadmap and open questions | [docs/todo.md](docs/todo.md) | — |
