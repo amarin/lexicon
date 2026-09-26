@@ -158,7 +158,7 @@ func main() {
 	//    0-5  given_name Иоанн              normal=Иван ref=g1
 	//         surface match «Иоанн» (people)
 	//    9-24 division   села Покровское    normal=покровское ref= candidate
-	//         trigger «села» → division candidate
+	//         trigger «села» → division candidate +1
 	// крестьянин Мороз []
 	// крестьянин Мороз [period:pre1917]
 	//   11-16 surname    Мороз              normal=Мороз ref=s2
