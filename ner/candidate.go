@@ -17,6 +17,7 @@ type candidate struct {
 	context    bool     // supported by a hint, trigger or pattern
 	flags      SpanFlag
 	evidence   []string
+	absorbed   []int // keyword positions a rule absorbed into the range
 	removed    bool
 	score      float64
 	alts       []*candidate // other readings of this range (D14): resolution losers, v0.3 relabel sources

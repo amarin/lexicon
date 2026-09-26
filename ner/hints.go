@@ -60,12 +60,16 @@ func within(tx *gazetteer.Text, k int, c *candidate, dir rules.Direction, window
 	return false
 }
 
-// absorb extends c over the keyword at k when it is directly adjacent.
+// absorb extends c over the keyword at k when it is directly adjacent and
+// records k as absorbed.
 func (s *state) absorb(c *candidate, k int) {
 	switch {
 	case k == c.start-1 && !s.tx.Break(k):
 		c.start = k
 	case k == c.end && !s.tx.Break(c.end-1):
 		c.end = k + 1
+	default:
+		return
 	}
+	c.absorbed = append(c.absorbed, k)
 }

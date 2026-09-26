@@ -99,3 +99,23 @@ func TestNestingEndToEnd(t *testing.T) {
 		t.Fatalf("nested flags: %v %v %v", res.Spans[0].Flags, res.Spans[1].Flags, res.Spans[2].Flags)
 	}
 }
+
+// A keyword absorbed by a rule was disambiguated by that rule: it keeps
+// contributing Abbrev but no longer Ambiguous («с.» is село or сын).
+func TestAbsorbedKeywordIsNotAmbiguous(t *testing.T) {
+	const yaml = `sets:
+  - name: s
+    hints:
+      - {lemma: село, dotted: true, type: division, dir: right, window: 1, weight: 2, absorb: true}
+`
+	p, _ := newPipeline(t, testEntries(), yaml)
+	d := spanOf(t, extract(t, p, Doc{Text: "с. Лягушкино"}).Spans, "division", "с. Лягушкино")
+	if !d.Flags.Has(Abbrev) || d.Flags.Has(Ambiguous) {
+		t.Fatalf("hint-absorbed «с.»: flags = %v", d.Flags)
+	}
+	p, _ = newPipeline(t, testEntries(), placesRules)
+	d = spanOf(t, extract(t, p, Doc{Text: "с. Новое"}).Spans, "division", "с. Новое")
+	if !d.Flags.Has(Abbrev) || d.Flags.Has(Ambiguous) || !d.Flags.Has(Candidate) {
+		t.Fatalf("trigger-absorbed «с.»: flags = %v", d.Flags)
+	}
+}

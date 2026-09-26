@@ -36,7 +36,10 @@ func (s *state) span(text string, c *candidate) Span {
 		if hasLemmaFlag(t, lexicon.FlagAbbrev) {
 			sp.Flags |= Abbrev
 		}
-		if hasLemmaFlag(t, lexicon.FlagAmbiguous) {
+		// A keyword the rule absorbed was disambiguated by that rule (an
+		// «с.» a village hint absorbed reads as «село»), so it is not a
+		// source of ambiguity; it still marks the span as abbreviated.
+		if hasLemmaFlag(t, lexicon.FlagAmbiguous) && !slices.Contains(c.absorbed, p) {
 			sp.Flags |= Ambiguous
 		}
 		if c.origin != originSurface && onlyPredicted(t) {
