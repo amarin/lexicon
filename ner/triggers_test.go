@@ -4,6 +4,8 @@ import (
 	"reflect"
 	"slices"
 	"testing"
+
+	"github.com/amarin/lexicon/gazetteer"
 )
 
 func TestTriggerCandidate(t *testing.T) {
@@ -33,6 +35,18 @@ func TestTriggerBoostsExistingMatch(t *testing.T) {
 func TestTriggerShapeStops(t *testing.T) {
 	p, _ := newPipeline(t, testEntries(), placesRules)
 	assertBrief(t, extract(t, p, Doc{Text: "в деревне жил Иван"}).Spans, "given_name:Иван")
+}
+
+// TestTriggerRespectsBlocked: a Blocked alias vetoes its type on the range
+// it matched. A trigger must not resurrect a fresh candidate of that type
+// over the same words, even though filterEarly already removed the blocked
+// candidate before applyTriggers runs.
+func TestTriggerRespectsBlocked(t *testing.T) {
+	entries := append(testEntries(), gazetteer.Entry{
+		Alias: "Сидоровке", Type: "division", Flags: gazetteer.Blocked,
+	})
+	p, _ := newPipeline(t, entries, placesRules)
+	assertBrief(t, extract(t, p, Doc{Text: "в деревне Сидоровке"}).Spans)
 }
 
 func TestNegativeTrigger(t *testing.T) {

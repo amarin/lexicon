@@ -15,6 +15,7 @@ type state struct {
 	terms   []lexicon.Term
 	explain bool
 	cands   []*candidate
+	blocked []rangeKey // ranges filterEarly vetoed for their type (gazetteer.Blocked)
 }
 
 func (s *state) term(pos int) *lexicon.Term { return &s.terms[s.tx.TermIndex(pos)] }

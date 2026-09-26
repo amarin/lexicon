@@ -26,12 +26,29 @@ func (s *state) filterEarly() {
 			}
 		}
 		c.hits = kept
+		if blocked {
+			// A blocked alias means "these words are not of this type": remember
+			// the range so a later trigger does not propose a fresh candidate of
+			// the same, vetoed type over it.
+			s.blocked = append(s.blocked, rangeKey{c.start, c.end, c.typ})
+		}
 		if blocked || len(kept) == 0 {
 			c.removed = true
 			continue
 		}
 		c.recomputeOrigin()
 	}
+}
+
+// blockedOverlap reports whether [a, b) overlaps a filterEarly-vetoed range
+// of typ.
+func (s *state) blockedOverlap(typ string, a, b int) bool {
+	for _, rk := range s.blocked {
+		if rk.typ == typ && rk.start < b && a < rk.end {
+			return true
+		}
+	}
+	return false
 }
 
 // caseMatches compares the letter case of every covered word with the alias.

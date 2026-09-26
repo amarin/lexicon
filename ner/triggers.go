@@ -31,7 +31,7 @@ func (s *state) applyTriggers(ts []*rules.TriggerRule) {
 				boosted = true
 				s.note(c, "trigger «%s» → %s %+g", kw.Token.Raw, tr.Type, w)
 			}
-			if tr.Negative || boosted {
+			if tr.Negative || boosted || s.blockedOverlap(tr.Type, a, b) {
 				continue
 			}
 			nc := &candidate{
