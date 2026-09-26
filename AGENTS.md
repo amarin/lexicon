@@ -55,14 +55,20 @@ Project instructions for AI agents (Codex, Claude, LGTM).
   produced terms requires bumping `analyzerVersion` (hosts reindex). Host profile
   definitions are not part of `Analyzer.Version`: hosts version their profiles
   themselves.
+- Changing NER behaviour that changes extracted spans (candidate generation, filters,
+  rule application, scoring, resolution, output flags) requires bumping
+  `ner.extractorVersion` (part of `Result.Version`; hosts recompute stored spans).
+  Before the first release of a milestone (while it is "unreleased") the version is
+  not bumped: no host stores spans from it.
 - Documentation follows behaviour, in both `docs/en/` and `docs/ru/`:
   - a new user-visible feature gets a scenario in `scenarios.md` ("Available since"),
     an entry in `library.md`/`cli.md`, and a runnable example (an `// Output:` block
     when it needs no downloaded data) or an `ExampleXxx` function;
   - a behaviour change moves or adds a line under the scenario's **History**
     (a "Behaviour in X" line becomes history when it changes) and marks
-    ⚠ reindex when it bumps `Rules.Version` or `analyzerVersion`; CHANGELOG stays
-    the source of truth;
+    ⚠ reindex when it bumps `Rules.Version` or `analyzerVersion`, ⚠ re-extract
+    when it bumps `ner.extractorVersion` only (RU: «⚠ переиндексация»,
+    «⚠ переизвлечение»); CHANGELOG stays the source of truth;
   - README marks features with the version they appear in (`*(0.1.0)*`;
     implemented but not yet released: `*(0.2, unreleased)*`; `*(planned: 0.3)*`).
 
