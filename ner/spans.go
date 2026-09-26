@@ -36,10 +36,12 @@ func (s *state) span(text string, c *candidate) Span {
 		if hasLemmaFlag(t, lexicon.FlagAbbrev) {
 			sp.Flags |= Abbrev
 		}
-		// A keyword the rule absorbed was disambiguated by that rule (an
-		// «с.» a village hint absorbed reads as «село»), so it is not a
-		// source of ambiguity; it still marks the span as abbreviated.
-		if hasLemmaFlag(t, lexicon.FlagAmbiguous) && !slices.Contains(c.absorbed, p) {
+		// Of the covered words, only an ambiguous abbreviation («с.»: село
+		// or сын) makes the span ambiguous; ordinary homonymy of a word
+		// («стали») is resolved by the alias match itself. A keyword the
+		// rule absorbed was disambiguated by that rule (an «с.» a village
+		// hint absorbed reads as «село»); it still marks the span Abbrev.
+		if ambiguousAbbrev(t) && !slices.Contains(c.absorbed, p) {
 			sp.Flags |= Ambiguous
 		}
 		if c.origin != originSurface && onlyPredicted(t) {
@@ -90,6 +92,18 @@ func (s *state) output(text string, chosen []*candidate, nested map[*candidate]b
 func hasLemmaFlag(t *lexicon.Term, f lexicon.Flag) bool {
 	for _, l := range t.Lemmas {
 		if l.Flags&f != 0 {
+			return true
+		}
+	}
+	return false
+}
+
+// ambiguousAbbrev: t has an abbreviation lemma that is ambiguous (several
+// expansions, or a one-letter dotted abbreviation).
+func ambiguousAbbrev(t *lexicon.Term) bool {
+	const f = lexicon.FlagAbbrev | lexicon.FlagAmbiguous
+	for _, l := range t.Lemmas {
+		if l.Flags&f == f {
 			return true
 		}
 	}

@@ -1,11 +1,15 @@
 package ner
 
 import (
+	"context"
 	"slices"
 	"testing"
 	"unicode/utf8"
 
+	"github.com/amarin/lexicon"
 	"github.com/amarin/lexicon/gazetteer"
+	"github.com/amarin/lexicon/internal/fakedict"
+	"github.com/amarin/lexicon/textnorm"
 )
 
 func TestHintsAbsorbAndBoost(t *testing.T) {
@@ -117,5 +121,37 @@ func TestAbsorbedKeywordIsNotAmbiguous(t *testing.T) {
 	d = spanOf(t, extract(t, p, Doc{Text: "с. Новое"}).Spans, "division", "с. Новое")
 	if !d.Flags.Has(Abbrev) || d.Flags.Has(Ambiguous) || !d.Flags.Has(Candidate) {
 		t.Fatalf("trigger-absorbed «с.»: flags = %v", d.Flags)
+	}
+}
+
+// Of the covered words only an ambiguous abbreviation sets Ambiguous:
+// homonymy of an ordinary word («стали»: сталь or стать) is resolved by the
+// alias match, one ref and one normal form stay unambiguous.
+func TestCoveredWordAmbiguity(t *testing.T) {
+	d := fakedict.Genealogy()
+	d.Add(lexicon.KindBase, "base.fake", "сталь", "NOUN,inan,femn sing,nomn", "сталь", "стали")
+	d.Add(lexicon.KindBase, "base.fake", "стать", "VERB,perf,intr", "стали")
+	an := lexicon.NewAnalyzer(d, textnorm.Modern, lexicon.AnalyzerOptions{})
+	entries := []gazetteer.Entry{
+		{Alias: "стали", Type: "material", Ref: "material:1", Canonical: "сталь"},
+		{Alias: "с. Новое", Type: "division", Ref: "division:9", Canonical: "Новое"},
+	}
+	gz, err := gazetteer.New(context.Background(), gazetteer.Config{
+		Analyzer: an, DefaultProfile: fakedict.Profiles()["text"],
+		Sources: []gazetteer.Source{gazetteer.NewSliceSource("test", "1", entries)},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, err := New(Config{Analyzer: an, Gazetteer: gz, Profiles: fakedict.Profiles(), DefaultProfile: "text"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	res := extract(t, p, Doc{Text: "из стали в с. Новое"})
+	if m := spanOf(t, res.Spans, "material", "стали"); m.Flags.Has(Ambiguous) {
+		t.Fatalf("homonym word: flags = %v", m.Flags)
+	}
+	if v := spanOf(t, res.Spans, "division", "с. Новое"); !v.Flags.Has(Ambiguous) || !v.Flags.Has(Abbrev) {
+		t.Fatalf("ambiguous abbreviation: flags = %v", v.Flags)
 	}
 }

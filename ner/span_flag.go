@@ -4,7 +4,9 @@ package ner
 type SpanFlag uint8
 
 const (
-	// Ambiguous: several refs/normal forms, an ambiguous abbreviation, or a tie between types.
+	// Ambiguous: several refs/normal forms, a covered ambiguous abbreviation
+	// (not absorbed by a rule), or a tie between types. Homonymy of an
+	// ordinary covered word does not set it.
 	Ambiguous SpanFlag = 1 << iota
 	// Predicted: a covered word was known only by predicted lemmas.
 	Predicted
