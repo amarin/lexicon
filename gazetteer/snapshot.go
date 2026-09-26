@@ -1,6 +1,11 @@
 package gazetteer
 
-import "slices"
+import (
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
+	"slices"
+)
 
 // Snapshot is an immutable set of compiled sources. It is safe for
 // concurrent use; Gazetteer publishes a new one on every successful refresh.
@@ -73,6 +78,29 @@ func (s *Snapshot) unionSorted(get func(*groups) []string) []string {
 	}
 	slices.Sort(out)
 	return out
+}
+
+// Version identifies the compiled content: it changes when any source is
+// recompiled from a different version or with a different analyzer.
+func (s *Snapshot) Version() string { return s.version }
+
+// Reports returns the last report of every source, in configuration order.
+func (s *Snapshot) Reports() []SourceReport {
+	out := make([]SourceReport, len(s.sources))
+	for i, src := range s.sources {
+		out[i] = src.report
+	}
+	return out
+}
+
+func snapshotVersion(srcs []*compiledSource) string {
+	h := sha256.New()
+	for _, s := range srcs {
+		if s.built {
+			fmt.Fprintf(h, "%s\x00%s\x00%s\n", s.name, s.version, s.analyzerVersion)
+		}
+	}
+	return hex.EncodeToString(h.Sum(nil))
 }
 
 func walkSurface(t *trie, tx *Text, start int, out []Match) []Match {
