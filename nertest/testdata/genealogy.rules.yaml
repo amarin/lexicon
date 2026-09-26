@@ -1,0 +1,31 @@
+# Rule fixture for the nertest integration test and the CLI tests.
+meta:
+  source: lexicon test fixture
+  license: CC0-1.0
+
+sets:
+  # Place keywords, always active.
+  - name: places
+    hints:
+      # «деревни Лягушкиной»: the keyword precedes the name and joins the span.
+      - {lemma: деревня, type: division, dir: right, window: 1, weight: 2, absorb: true}
+      # «Боровского уезда»: the keyword follows the name.
+      - {lemma: уезд, type: division, dir: left, window: 1, weight: 2, absorb: true}
+      # «ул. Мира»: street context only from the dotted abbreviation.
+      - {lemma: ул, dotted: true, type: street, dir: right, window: 1, weight: 2, absorb: true}
+    triggers:
+      # A title-case Cyrillic word unknown to the gazetteer after «деревня»/«село».
+      - lemma: деревня|село
+        type: division
+        dir: right
+        window: 1..2
+        shape: {case: title, script: cyrillic}
+        stop_at: [punct, stop]
+        weight: 1
+        absorb: true
+
+  # Pre-1917 records: a word after «крестьянин» is likely a surname.
+  - name: pre1917
+    when: ["period:pre1917"]
+    hints:
+      - {lemma: крестьянин, type: surname, dir: right, window: 2, weight: 1}

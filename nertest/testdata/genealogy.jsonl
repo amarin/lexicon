@@ -1,0 +1,6 @@
+{"id": "peasant", "text": "крестьянин деревни Лягушкиной Иван Петров", "spans": [{"text": "крестьянин", "type": "estate"}, {"text": "деревни Лягушкиной", "type": "division"}, {"text": "Иван", "type": "given_name"}, {"text": "Петров", "type": "surname"}]}
+{"id": "street", "text": "жил на ул. Мира", "spans": [{"text": "ул. Мира", "type": "street"}]}
+{"id": "frost", "text": "ударил мороз", "spans": []}
+{"id": "frost-surname", "text": "крестьянин Мороз", "tags": ["period:pre1917"], "spans": [{"text": "крестьянин", "type": "estate"}, {"text": "Мороз", "type": "surname"}]}
+{"id": "uezd", "text": "Лягушкино Боровского уезда", "spans": [{"text": "Лягушкино", "type": "division"}, {"text": "Боровского уезда", "type": "division"}]}
+{"id": "variant", "text": "Иоанн, сын Ивана", "spans": [{"text": "Иоанн", "type": "given_name"}, {"text": "Ивана", "type": "given_name"}]}

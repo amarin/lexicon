@@ -1,0 +1,14 @@
+# source: lexicon test fixture
+# license: CC0-1.0
+# generated_from: hand-written for lexicon tests
+estate	estate:1	крестьянин	крестьянин
+estate	estate:1	крестьянин	крест.
+division	division:1	Лягушкино	Лягушкино		division_type=деревня
+division	division:1	Лягушкино	Лягушкина		division_type=деревня
+division	division:2	Боровский	Боровский		division_type=уезд
+given_name	given_name:1	Иван	Иван
+given_name	given_name:1	Иван	Иоанн
+given_name	given_name:2	Мария	Мария
+surname	surname:1	Петров	Петров
+surname	surname:2	Мороз	Мороз	requires_context
+street	street:1	Мира	Мира	surface_only,requires_context
