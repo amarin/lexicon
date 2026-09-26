@@ -27,7 +27,7 @@ func givenDir(t *testing.T) string {
 func TestRunAnalyzeFull(t *testing.T) {
 	var out, errOut bytes.Buffer
 
-	code := run(t.Context(), []string{"analyze", "--dicts", givenDir(t), "--mode", "full", "Ивана, сына"}, &out, &errOut)
+	code := run(t.Context(), []string{"analyze", "--dicts", givenDir(t), "--mode", "full", "Ивана, сына"}, nil, &out, &errOut)
 	if code != 0 {
 		t.Fatalf("exit %d, stderr %s", code, errOut.String())
 	}
@@ -44,7 +44,7 @@ func TestRunAnalyzeFull(t *testing.T) {
 func TestRunDictsList(t *testing.T) {
 	var out, errOut bytes.Buffer
 
-	if code := run(t.Context(), []string{"dicts", "list", "--dicts", givenDir(t)}, &out, &errOut); code != 0 {
+	if code := run(t.Context(), []string{"dicts", "list", "--dicts", givenDir(t)}, nil, &out, &errOut); code != 0 {
 		t.Fatalf("exit %d, stderr %s", code, errOut.String())
 	}
 
@@ -76,7 +76,7 @@ func TestRunDictsFetchExisting(t *testing.T) {
 	t.Cleanup(func() { fetch = orig })
 
 	var out, errOut bytes.Buffer
-	if code := run(t.Context(), []string{"dicts", "fetch", "--dicts", dir}, &out, &errOut); code != 0 {
+	if code := run(t.Context(), []string{"dicts", "fetch", "--dicts", dir}, nil, &out, &errOut); code != 0 {
 		t.Fatalf("exit %d, stderr %s", code, errOut.String())
 	}
 
@@ -123,7 +123,7 @@ func TestRunDictsFetchForce(t *testing.T) {
 	t.Cleanup(func() { fetch = orig })
 
 	var out, errOut bytes.Buffer
-	if code := run(t.Context(), []string{"dicts", "fetch", "--dicts", dir, "--force"}, &out, &errOut); code != 0 {
+	if code := run(t.Context(), []string{"dicts", "fetch", "--dicts", dir, "--force"}, nil, &out, &errOut); code != 0 {
 		t.Fatalf("exit %d, stderr %s", code, errOut.String())
 	}
 
@@ -163,13 +163,13 @@ func TestRunUsage(t *testing.T) {
 	}
 	for name, args := range cases {
 		var out, errOut bytes.Buffer
-		if code := run(t.Context(), args, &out, &errOut); code != 2 {
+		if code := run(t.Context(), args, nil, &out, &errOut); code != 2 {
 			t.Errorf("%s: exit %d, want 2", name, code)
 		}
 	}
 
 	var out bytes.Buffer
-	if code := run(t.Context(), []string{"help"}, &out, &out); code != 0 || !strings.Contains(out.String(), "usage:") {
+	if code := run(t.Context(), []string{"help"}, nil, &out, &out); code != 0 || !strings.Contains(out.String(), "usage:") {
 		t.Errorf("help: exit %d, %q", code, out.String())
 	}
 }
