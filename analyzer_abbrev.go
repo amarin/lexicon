@@ -29,7 +29,7 @@ func (a *Analyzer) abbrev(key string) []Lemma {
 func (a *Analyzer) lookupAbbrev(key string) []Lemma {
 	exact, _ := a.parse(key, abbrevKinds)
 
-	return a.lemmas(exact, 0)
+	return a.lemmas(key, exact, 0)
 }
 
 // dottedAbbrev looks up form+"." as an abbreviation; a one-letter dotted

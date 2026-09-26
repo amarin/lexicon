@@ -17,7 +17,7 @@ import (
 // Result.Version. Bump it on any change of extraction behaviour (candidate
 // generation, filters, rule application, scoring, resolution, output flags)
 // so hosts invalidate spans stored from an older build.
-const extractorVersion = "ner-1"
+const extractorVersion = "ner-2"
 
 // Pipeline extracts spans; it is safe for concurrent use.
 type Pipeline struct {

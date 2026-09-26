@@ -40,10 +40,12 @@ func (a *Analyzer) lookupWord(form string, p Profile) wordResult {
 
 	var extra Flag
 
+	parsed := form // the form the exact readings belong to
+
 	if len(exact) == 0 {
 		for _, v := range textnorm.ReformVariants(form) {
 			if e, _ := a.parse(v, p.Kinds); len(e) > 0 {
-				exact, extra = e, FlagReform
+				exact, extra, parsed = e, FlagReform, v
 
 				break
 			}
@@ -51,16 +53,16 @@ func (a *Analyzer) lookupWord(form string, p Profile) wordResult {
 	}
 
 	if svc := serviceCandidates(exact); allStop(svc) {
-		return wordResult{lemmas: a.lemmas(svc, FlagStop|extra), stop: true}
+		return wordResult{lemmas: a.lemmas(parsed, svc, FlagStop|extra), stop: true}
 	}
 
 	var ls []Lemma
 
 	switch {
 	case len(exact) > 0:
-		ls = a.lemmas(p.filter(exact), extra)
+		ls = a.lemmas(parsed, p.filter(exact), extra)
 	default:
-		ls = a.lemmas(predicted, FlagPredicted)
+		ls = a.lemmas(form, predicted, FlagPredicted)
 	}
 
 	if ls == nil {
@@ -88,11 +90,15 @@ func (a *Analyzer) parse(form string, kinds []Kind) (exact, predicted []Reading)
 	return exact, predicted
 }
 
-// lemmas are the distinct lemmas of readings (normalized like words), each
-// with extra, FlagAbbrev for abbreviation dictionaries and FlagAmbiguous when
-// there are several. nil when rs is empty.
-func (a *Analyzer) lemmas(rs []Reading, extra Flag) []Lemma {
+// lemmas are the distinct lemmas of readings of form (normalized like
+// words), each with extra, FlagAmbiguous when there are several and
+// FlagAbbrev when an abbreviation dictionary expands form to a different
+// lemma: the full word «деревня» of an abbreviation dictionary is not
+// abbreviated, «дер.» is. nil when rs is empty.
+func (a *Analyzer) lemmas(form string, rs []Reading, extra Flag) []Lemma {
 	var out []Lemma
+
+	norm := textnorm.NormalizeWord(a.rules, form)
 
 	for _, r := range rs {
 		text := textnorm.NormalizeWord(a.rules, r.Normal)
@@ -101,7 +107,7 @@ func (a *Analyzer) lemmas(rs []Reading, extra Flag) []Lemma {
 		}
 
 		f := extra
-		if r.Kind == KindAbbrev {
+		if r.Kind == KindAbbrev && text != norm {
 			f |= FlagAbbrev
 		}
 

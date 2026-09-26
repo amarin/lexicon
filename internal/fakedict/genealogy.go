@@ -39,11 +39,12 @@ func Genealogy() *Dict {
 	d.Add(b, base, "петров", "NOUN,anim,masc,Surn sing,nomn", "петров", "петрова", "петрову")
 	d.Predict("сидоровке", "сидоровка", "NOUN,inan,femn,Geox sing,loct")
 
-	d.Add(a, abbr, "деревня", "NOUN,inan,femn", "дер", "дер.")
-	d.Add(a, abbr, "улица", "NOUN,inan,femn", "ул", "ул.")
-	d.Add(a, abbr, "крестьянин", "NOUN,anim,masc", "крест", "крест.")
-	d.Add(a, abbr, "село", "NOUN,inan,neut", "с", "с.")
-	d.Add(a, abbr, "сын", "NOUN,anim,masc", "с", "с.")
+	d.Add(a, abbr, "деревня", "NOUN,inan,femn", "деревня", "дер", "дер.")
+	d.Add(a, abbr, "улица", "NOUN,inan,femn", "улица", "ул", "ул.")
+	d.Add(a, abbr, "крестьянин", "NOUN,anim,masc", "крестьянин", "крест", "крест.")
+	d.Add(a, abbr, "село", "NOUN,inan,neut", "село", "с", "с.")
+	d.Add(a, abbr, "сын", "NOUN,anim,masc", "сын", "с", "с.")
+	d.Add(a, abbr, "погост", "NOUN,inan,masc", "погост", "пог", "пог.")
 
 	d.Add(KindGiven, "given.fake", "иван", "Name,masc", "иван", "ивана", "ивану")
 	d.Add(KindGiven, "given.fake", "иоанн", "Name,masc", "иоанн", "иоанна")

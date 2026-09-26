@@ -34,6 +34,12 @@ func TestAnalyzeFull(t *testing.T) {
 		{"one letter without a dot is a stop word", "с Кота", "с=с[stop]; кота=кот[]"},
 		{"compound stays whole", "Санктъ-Петербургъ", "санкт-петербург=санкт-петербург[unknown]"},
 		{"hyphenated abbreviation", "кр-нин", "кр-нин=крестьянин[abbrev]"},
+		{
+			"full words of an abbreviation dictionary are not abbreviated", "Сын деревня город с. г.",
+			"сын=сын[]; деревня=деревня[]; город=город[]; " +
+				"с.=село[ambiguous,abbrev],сын[ambiguous,abbrev]; .; г.=город[ambiguous,abbrev],год[ambiguous,abbrev]; .",
+		},
+		{"full word before a sentence dot", "город.", "город=город[]; ."},
 		{"pre-reform ending", "Покровскаго", "покровскаго=покровский[reform]"},
 	}
 	a := newTestAnalyzer()
@@ -44,6 +50,18 @@ func TestAnalyzeFull(t *testing.T) {
 				t.Errorf("Analyze(%q, ModeFull) = %q, want %q", c.text, got, c.want)
 			}
 		})
+	}
+}
+
+// TestAnalyzeFullAbbrevRegistry: a registry whose base lacks the full words
+// (genodex without a base file) reads them from the abbreviation dictionary
+// only; they are still not abbreviated.
+func TestAnalyzeFullAbbrevRegistry(t *testing.T) {
+	a := NewAnalyzer(openTest(t, t.TempDir(), nil), textnorm.PreReform, AnalyzerOptions{})
+
+	const want = "сын=сын[]; деревня=деревня[]; с.=село[ambiguous,abbrev],сын[ambiguous,abbrev]; .; дер.=деревня[abbrev]; ."
+	if got := showFull(a.Analyze("сын деревня с. дер.", profText, ModeFull)); got != want {
+		t.Errorf("Analyze = %q, want %q", got, want)
 	}
 }
 

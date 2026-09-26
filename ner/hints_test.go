@@ -155,3 +155,16 @@ func TestCoveredWordAmbiguity(t *testing.T) {
 		t.Fatalf("ambiguous abbreviation: flags = %v", v.Flags)
 	}
 }
+
+// A full word of an abbreviation dictionary («погост», abbreviated «пог.»)
+// is not an abbreviation: only the abbreviated form marks the span Abbrev.
+func TestFullWordOfAbbreviationIsNotAbbrev(t *testing.T) {
+	entries := []gazetteer.Entry{{Alias: "погост Новое", Type: "division", Ref: "division:9", Canonical: "Новое"}}
+	p, _ := newPipeline(t, entries, "")
+	if d := spanOf(t, extract(t, p, Doc{Text: "в погост Новое"}).Spans, "division", "погост Новое"); d.Flags.Has(Abbrev) {
+		t.Fatalf("full word: flags = %v", d.Flags)
+	}
+	if d := spanOf(t, extract(t, p, Doc{Text: "в пог. Новое"}).Spans, "division", "пог. Новое"); !d.Flags.Has(Abbrev) {
+		t.Fatalf("abbreviated word: flags = %v", d.Flags)
+	}
+}

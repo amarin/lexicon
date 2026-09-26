@@ -20,6 +20,7 @@ func TestTextBreaks(t *testing.T) {
 	}{
 		{"дер. Лягушкиной Иван", 3, []bool{false, false, true}}, // abbreviation dot is transparent
 		{"Иван Петров. Мария", 3, []bool{false, true, true}},    // sentence end
+		{"Мария погост. Иван", 3, []bool{false, true, true}},    // a full word is not an abbreviation
 		{"Иван, Петров", 2, []bool{true, true}},                 // comma breaks
 		{"И. Петров", 2, []bool{false, true}},                   // initial
 	}

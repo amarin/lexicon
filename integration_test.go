@@ -32,7 +32,8 @@ func realBase(t testing.TB) []byte {
 // scribeAbbrev is a subset of the genodex scribe abbreviations.
 var scribeAbbrev = BuiltinDict{
 	Name: "abbrev.scribes", Kind: KindAbbrev, Format: FormatTSV,
-	Data: []byte("село\tс.\tNOUN\nсын\tс.\tNOUN\nгород\tг.\tNOUN\nгод\tг.\tNOUN\nкрестьянин\tкр-нин\tNOUN\n"),
+	Data: []byte("село\tс.\tNOUN\nсын\tс.\tNOUN\nгород\tг.\tNOUN\nгод\tг.\tNOUN\nкрестьянин\tкр-нин\tNOUN\n" +
+		"деревня\tд.\tNOUN\nдочь\tд.\tNOUN\nсельцо\tс-цо\tNOUN\n"),
 }
 
 func openReal(t testing.TB) (*Registry, *Analyzer) {
@@ -84,6 +85,45 @@ func TestRealBaseP1Sentence(t *testing.T) {
 	for _, c := range checks {
 		if !lemmaWith(terms, c.form, c.lemma, c.flags) {
 			t.Errorf("no %s → %s[%s] in %+v", c.form, c.lemma, c.flags, terms)
+		}
+	}
+}
+
+// TestRealBaseFullWordsNotAbbrev: full words of the abbreviation dictionary
+// are not flagged abbrev; their abbreviated forms still are.
+func TestRealBaseFullWordsNotAbbrev(t *testing.T) {
+	_, a := openReal(t)
+
+	// "place" filters base readings to Geox: the full words keep only their
+	// abbreviation-dictionary readings, as in genodex without a base file.
+	place := Profile{Name: "place", Kinds: []Kind{KindBase, KindAbbrev}, Grammemes: map[Kind][]string{KindBase: {"Geox"}}}
+	for _, p := range []Profile{{Name: "text"}, place} {
+		t.Run(p.Name, func(t *testing.T) { checkFullWordsNotAbbrev(t, a, p) })
+	}
+}
+
+func checkFullWordsNotAbbrev(t *testing.T, a *Analyzer, p Profile) {
+	t.Helper()
+
+	terms := a.Analyze("сын деревня город село сельцо год с. д. г. с-цо кр-нин", p, ModeFull)
+
+	for _, form := range []string{"сын", "деревня", "город", "село", "сельцо", "год"} {
+		if !lemmaWith(terms, form, form, 0) {
+			t.Errorf("no lemma %s for %s in %+v", form, form, terms)
+		}
+
+		if lemmaWith(terms, form, form, FlagAbbrev) {
+			t.Errorf("full word %s is flagged abbrev: %+v", form, terms)
+		}
+	}
+
+	abbrevs := []struct{ form, lemma string }{
+		{"с.", "село"}, {"с.", "сын"}, {"д.", "деревня"}, {"д.", "дочь"},
+		{"г.", "город"}, {"г.", "год"}, {"с-цо", "сельцо"}, {"кр-нин", "крестьянин"},
+	}
+	for _, c := range abbrevs {
+		if !lemmaWith(terms, c.form, c.lemma, FlagAbbrev) {
+			t.Errorf("no %s → %s[abbrev] in %+v", c.form, c.lemma, terms)
 		}
 	}
 }
