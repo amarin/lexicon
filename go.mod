@@ -6,6 +6,8 @@ toolchain go1.27.1
 
 require golang.org/x/text v0.41.0
 
+require go.yaml.in/yaml/v3 v3.0.5
+
 require (
 	github.com/amarin/gomorphy v1.2.0
 	github.com/amarin/logging v0.1.2
