@@ -19,6 +19,9 @@ pkg.go.dev).
 | [abbrev](abbrev/main.go) | an `abbrev` dictionary: «с.», «у.», «кр-нин» | 9 | no |
 | [registry](registry/main.go) | a dictionary directory: `.meta`, broken files, `SetEnabled`, `Reload`, `Version` | 10, 12, 13 | no — files written to a temp dir |
 | [embed](embed/main.go) | a built-in dictionary via `//go:embed`, overridden by a file | 10 | no — `abbrev.records.tsv` is committed |
+| [ner](ner/main.go) | *(0.2, unreleased)* gazetteer + rules → spans: hints, a trigger candidate, a rule set by document tag, `Explain` | 15, 16, 17 | no — morphology, gazetteer and rules in code |
+| [gazetteer](gazetteer/main.go) | *(0.2, unreleased)* sources, the build report, `Refresh` of a changed host source, raw matches, variant groups | 15, 18 | no |
+| [golden](golden/main.go) | *(0.2, unreleased)* `nertest`: strict/partial precision and recall, `Check`, `WithTags` from case context | 19 | no |
 | [base](base/main.go) | the real OpenCorpora base: provenance, `text` vs `name` profile | 4, 6, 11 | yes — `lexicon dicts fetch` first |
 
 Run any of them from the repository root:
@@ -33,6 +36,9 @@ go run ./examples/full
 go run ./examples/abbrev
 go run ./examples/registry
 go run ./examples/embed
+go run ./examples/ner
+go run ./examples/gazetteer
+go run ./examples/golden
 
 go run ./cmd/lexicon dicts fetch
 go run ./examples/base -dicts ~/.local/share/lexicon/dicts
