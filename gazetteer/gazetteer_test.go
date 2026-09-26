@@ -156,3 +156,19 @@ func TestSnapshotVersionCoversProfiles(t *testing.T) {
 		t.Fatal("changing DefaultProfile must change Snapshot.Version")
 	}
 }
+
+// New copies the profiles: editing the host's map afterwards changes
+// neither how Refresh compiles nor the version.
+func TestNewCopiesTypeProfiles(t *testing.T) {
+	ctx := context.Background()
+	tp := map[string]lexicon.Profile{"given_name": {Name: "name", Kinds: []lexicon.Kind{lexicon.KindBase}}}
+	g, err := New(ctx, Config{Analyzer: stubAnalyzer{}, TypeProfiles: tp, Sources: []Source{NewSliceSource("s", "1", []Entry{{Alias: "Иван", Type: "given_name"}})}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	tp["given_name"].Kinds[0] = "other"
+	tp["surname"] = lexicon.Profile{Name: "x"}
+	if g.b.typeProfiles["given_name"].Kinds[0] != lexicon.KindBase || len(g.b.typeProfiles) != 1 {
+		t.Fatalf("host edits leaked: %+v", g.b.typeProfiles)
+	}
+}

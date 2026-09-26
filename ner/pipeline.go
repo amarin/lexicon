@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 
 	"github.com/amarin/lexicon"
 	"github.com/amarin/lexicon/gazetteer"
@@ -28,7 +29,9 @@ type Pipeline struct {
 	cfgHash  string
 }
 
-// New validates cfg and applies defaults.
+// New validates cfg and applies defaults. It copies the host-owned maps
+// (Profiles, Nesting, Weights.Types), so later edits to them do not affect
+// the Pipeline.
 func New(cfg Config) (*Pipeline, error) {
 	switch {
 	case cfg.Analyzer == nil:
@@ -36,6 +39,9 @@ func New(cfg Config) (*Pipeline, error) {
 	case cfg.Gazetteer == nil:
 		return nil, errors.New("ner: Config.Gazetteer is nil")
 	}
+	cfg.Profiles = cloneProfiles(cfg.Profiles)
+	cfg.Nesting = cloneNesting(cfg.Nesting)
+	cfg.Weights.Types = maps.Clone(cfg.Weights.Types)
 	if _, ok := cfg.Profiles[cfg.DefaultProfile]; !ok {
 		return nil, fmt.Errorf("ner: default profile %q is not in Config.Profiles", cfg.DefaultProfile)
 	}

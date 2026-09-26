@@ -60,6 +60,8 @@ func (b *Book) Sets() []string {
 }
 
 // Active returns the rules of the sets whose When tags are all in tags.
+// The returned rules are shared with the Book and every other caller: they
+// must not be modified.
 func (b *Book) Active(tags []string) Active {
 	var a Active
 	for _, s := range b.sets {

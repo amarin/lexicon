@@ -3,6 +3,7 @@ package ner
 import (
 	"context"
 	"errors"
+	"reflect"
 	"testing"
 
 	"github.com/amarin/lexicon"
@@ -74,5 +75,27 @@ func TestExtractVersionCoversProfiles(t *testing.T) {
 	p3, _ := newPipeline(t, testEntries(), placesRules)
 	if extract(t, p3, Doc{}).Version != v1 {
 		t.Fatal("identical configuration must give the same version")
+	}
+}
+
+// New copies the host-owned maps: editing them afterwards changes neither
+// the output nor the version.
+func TestNewCopiesHostMaps(t *testing.T) {
+	profiles := fakedict.Profiles()
+	types := map[string]float32{"division": 1}
+	nesting := map[string][]string{"division": {"division"}}
+	p, _ := newPipeline(t, testEntries(), placesRules, func(c *Config) {
+		c.Profiles, c.Weights.Types, c.Nesting = profiles, types, nesting
+	})
+	const text = "Лягушкино Боровского уезда, Иван Петров"
+	before := extract(t, p, Doc{Text: text}, Explain())
+	text0 := profiles["text"]
+	text0.Kinds[0] = "nope"
+	profiles["text"] = lexicon.Profile{Name: "text", Kinds: []lexicon.Kind{"nope"}}
+	types["division"] = -100
+	nesting["division"][0] = "street"
+	after := extract(t, p, Doc{Text: text}, Explain())
+	if !reflect.DeepEqual(before, after) {
+		t.Fatalf("host map edits leaked into the pipeline:\n before %+v\n after  %+v", before, after)
 	}
 }

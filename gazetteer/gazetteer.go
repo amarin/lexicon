@@ -26,7 +26,8 @@ type Gazetteer struct {
 }
 
 // New validates cfg and compiles every source. Source failures do not fail
-// New; they are visible in Snapshot().Reports().
+// New; they are visible in Snapshot().Reports(). New copies the profiles
+// (TypeProfiles, DefaultProfile), so later host edits do not affect it.
 func New(ctx context.Context, cfg Config) (*Gazetteer, error) {
 	if cfg.Analyzer == nil {
 		return nil, errors.New("gazetteer: Config.Analyzer is nil")
@@ -49,7 +50,7 @@ func New(ctx context.Context, cfg Config) (*Gazetteer, error) {
 	}
 	sum := sha256.Sum256(data)
 	g := &Gazetteer{
-		b:       builder{analyzer: cfg.Analyzer, typeProfiles: cfg.TypeProfiles, defaultProfile: cfg.DefaultProfile},
+		b:       builder{analyzer: cfg.Analyzer, typeProfiles: cloneProfiles(cfg.TypeProfiles), defaultProfile: cloneProfile(cfg.DefaultProfile)},
 		sources: slices.Clone(cfg.Sources),
 		cfgHash: hex.EncodeToString(sum[:8]),
 	}
