@@ -66,6 +66,17 @@ Carried over from [implementation/v0.2-ner.md](implementation/v0.2-ner.md#open-q
   shrinks; acceptable for long-running hosts with heavy alias churn?
   Scenario 15.
 
+Settled as defaults during v0.2 and open to revisit (see
+[implementation/v0.2-ner.md](implementation/v0.2-ner.md#open-questions)):
+
+- [ ] **Q-v02-5. `Blocked` scope.** A blocked alias vetoes its type on the
+  exact range, trigger candidates over that range included. Scenario 15.
+- [ ] **Q-v02-7. Nesting defaults.** `Config.Nesting` is empty by default;
+  hosts opt in per outer/inner type pair. Scenario 17.
+- [ ] **Q-v02-10. `absorb`.** An extension beyond the spec, shipped under
+  that name; since the 2026-09-26 review it also applies to a trigger that
+  boosts a gazetteer span. Owner to confirm the name. Scenario 16.
+
 ## Follow-ups
 
 - [ ] **`hasGrammeme` → gomorphy `HasGrammeme`** (D27) once a gomorphy

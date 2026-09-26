@@ -45,6 +45,22 @@ Notable changes of the project are recorded in this file (format inspired by
   `--min-precision`, `--min-recall`).
 - New dependency: `go.yaml.in/yaml/v3` (v3.0.5), for `rules` YAML files.
 
+### Fixed
+
+Found in the pre-release review of 0.2 (2026-09-26); they change behaviour
+added above, before any release.
+
+- `ner`: a span is `Ambiguous` from its covered words only for an
+  ambiguous abbreviation no rule absorbed; homonymy of an ordinary word
+  («стали») no longer flags it (on the real base most spans were flagged).
+- `ner`: a trigger's `weight` is added to the candidate it proposes (it
+  was ignored there), and `absorb` also extends a gazetteer span the
+  trigger boosts (span ranges depended on whether the gazetteer knew the
+  name).
+- CLI: `extract -` keeps stdin lines as read — trimming shifted offsets
+  against the offsets contract; the usage text marks the optional
+  `extract`/`golden` flags as optional.
+
 ### Documentation
 
 - Usage scenarios — what each feature is for, since which version, with
@@ -64,6 +80,14 @@ Notable changes of the project are recorded in this file (format inspired by
   `rules`, `ner` and `nertest` in the library reference, `extract` and
   `golden` in the CLI page; runnable examples `ner`, `gazetteer` and
   `golden`, checked by `go test ./examples/`.
+- Review of the 0.2 documentation against the code: hint windows, trigger
+  weight and absorb, `Ambiguous`, the ambiguity penalty, match breaks at
+  punctuation, `Snapshot.Version`, `Report.Check`, CLI synopsis and sample
+  output; library details (errors of `ner.New` and `gazetteer.New`,
+  weight defaults, `Refresh`, TSV limits, variant groups, `nertest.Run`);
+  a "⚠ re-extract" mark and the `Result.Version` table in scenario 13;
+  godoc examples for `gazetteer`, `rules`, `ner` and `nertest`; Russian
+  wording fixes.
 
 ## [0.1.0] - 2026-09-25
 
