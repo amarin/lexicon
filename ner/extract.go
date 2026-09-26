@@ -39,6 +39,7 @@ func (p *Pipeline) Extract(ctx context.Context, d Doc, opts ...Option) (Result, 
 	st.fromMatches(snap.Match(st.tx, nil))
 	st.filterEarly()
 	st.applyHints(active.Hints)
+	st.applyTriggers(active.Triggers)
 	st.filterContext()
 	st.scoreAll()
 	chosen, nested := st.resolve()
