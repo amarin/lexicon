@@ -20,7 +20,10 @@ keep a per-feature changelog next to the feature:
 - **⚠ reindex** — the change alters produced forms or terms: it bumps
   `textnorm.Rules.Version` or the analyzer version, `Analyzer.Version()`
   changes, and hosts must rebuild derived data (see
-  [scenario 13](#13-know-when-to-reindex)).
+  [scenario 13](#13-know-when-to-reindex)). Such a change also changes spans.
+- **⚠ re-extract** — the change alters extracted spans but not index terms:
+  it bumps the extractor version, `ner.Result.Version` changes, and hosts
+  recompute stored spans or suggestions, not the search index.
 
 Examples: `go run ./examples/<name>` from the repository root
 ([examples/](../../examples/README.md)); `ExampleXxx` functions are in
@@ -417,12 +420,20 @@ it changes. It combines three parts:
 | `Rules.Name`-`Rules.Version` | an orthography table or rule changes forms | `prereform-3` |
 | `Registry.Version()` | a dictionary is added, removed, enabled, disabled or its content changes | a content hash |
 
+Extracted spans have their own version, `ner.Result.Version`
+([scenario 15](#15-find-entities-with-dictionaries)). It changes with
+`Analyzer.Version()` and also with:
+
+| Part | Changes when | Example value |
+|---|---|---|
+| extractor version | NER rules of the library change spans (⚠ re-extract) | `ner-1` |
+| gazetteer snapshot | a source is recompiled from new content or with a new analyzer | a hash |
+| rule book | rule files change | a hash |
+| pipeline configuration | profiles, weights, nesting, `MinLemmaMatchRunes` change | a hash |
+
 Profiles are host definitions and are not part of it
 ([scenario 6](#6-a-profile-per-field-against-homonymy)). `Registry.Version()`
 alone is enough to invalidate caches of dictionary lookups.
-Extracted spans have their own version, `ner.Result.Version`, which also
-covers the gazetteer, rules and pipeline configuration
-([scenario 15](#15-find-entities-with-dictionaries)).
 
 **Example:** [registry](../../examples/registry/main.go),
 `ExampleAnalyzer_Version`; CLI `analyze` prints the version to stderr.
@@ -430,8 +441,8 @@ covers the gazetteer, rules and pipeline configuration
 **Available since:** 0.1.0 (analyzer version "2", `Modern` and `PreReform`
 "3").
 
-**History:** every later entry marked ⚠ reindex on this page names the
-part it bumps.
+**History:** every later entry marked ⚠ reindex or ⚠ re-extract on this
+page names the part it bumps.
 
 ## 14. Inspect by hand
 
@@ -464,7 +475,9 @@ forms («Боровского» → «Боровский») and spelling variant
   `# key: value` lines before the first entry are the provenance manifest.
   Aliases that share a `Ref` are variants of one record. `gazetteer.New`
   analyses every alias with your `Analyzer` (per type through
-  `TypeProfiles`) and compiles a lemma key and a surface key for it.
+  `TypeProfiles`) and compiles its surface key and lemma keys (one per
+  combination of the words' lemmas, at most `gazetteer.MaxLemmaKeys` = 8;
+  none for `SurfaceOnly`).
 - **Rules** (optional, [scenario 16](#16-context-words-triggers-and-document-tags)).
 - **Pipeline.** `ner.New(ner.Config{Analyzer, Gazetteer, Rules, Profiles,
   DefaultProfile})`, then `Extract(ctx, ner.Doc{Text, Profile, Tags,
@@ -485,9 +498,11 @@ for _, s := range res.Spans {
 
 A `Span` has byte and code-point offsets into `Doc.Text`
 (`Doc.Text[Start:End] == Surface`), the `Type`, the host `Refs` (opaque
-keys; empty for a trigger candidate), `Normal` (canonical forms), the
+keys; empty for a trigger candidate), `Normal` (the matched entries'
+`Canonical` forms; for a trigger candidate the lemmas of its words), the
 entries' `Attrs`, a `Score` and `Flags`: `Ambiguous` (several refs or
-normal forms, an ambiguous abbreviation, or a tie between types),
+normal forms, a covered ambiguous abbreviation such as «с.» that no rule
+absorbed, or a tie between types — not homonymy of an ordinary word),
 `Predicted`, `Abbrev`, `Candidate` (proposed by a trigger, not a record)
 and `Nested`. Entry flags tune matching: `SurfaceOnly` (no lemma key, for
 abbreviations like «СПб»), `CaseSensitive`, `RequiresContext` (kept only
@@ -511,9 +526,21 @@ host's job.
 - `Blocked` vetoes whatever the entry's other flags say: a blocked
   `CaseSensitive` entry vetoes in any letter case, and a blocked one-word
   lemma match vetoes even below `MinLemmaMatchRunes`.
+- An alias matches only consecutive words with no punctuation between
+  them («Большой, Лес» does not match «Большой Лес»); an abbreviation's own
+  dot is skipped.
 - A span ending in a dotted abbreviation excludes the dot («Калужской губ»,
   not «Калужской губ.»); extending the span over the dot is planned for 0.3.
+- Variant groups (aliases sharing a `Ref`) are not used by extraction: a
+  span's `Normal` comes from the `Canonical` fields of its matched entries
+  ([scenario 18](#18-keep-gazetteers-current-without-a-restart)).
 - The interner behind compiled aliases is process-wide and never shrinks.
+
+**History:**
+- 0.2 (unreleased) — `Ambiguous` no longer follows homonymy of a covered
+  word («стали»: сталь or стать), only an ambiguous abbreviation; before
+  the fix most spans on the real base were flagged. ⚠ re-extract (not
+  bumped: 0.2 is unreleased).
 
 ## 16. Context words, triggers and document tags
 
@@ -527,15 +554,20 @@ provenance mapping and `sets:` of rules; load it with `rules.LoadFile`,
 `LoadNamed` or `Load` and compile one or more files with `rules.Compile`
 into a `Book` for `ner.Config.Rules`.
 - A **hint** is a keyword (`lemma: деревня|село`, `dotted: true` for «ул.»)
-  that boosts spans of its `type` within `window` content words in `dir`
-  (`right`, `left`, `both`), satisfies their `RequiresContext`, and with
-  `absorb: true` extends the span over the keyword.
+  that adds its `weight` to spans of its `type` whose edge is within
+  `window` content words in `dir` (`right`, `left`, `both`; `window: 1` —
+  right next to the keyword), satisfies their `RequiresContext`, and with
+  `absorb: true` extends an adjacent span over the keyword. Hints have no
+  `shape`.
 - A **trigger** proposes a `Candidate` span of its `type` over the words
   after (or before) its keyword — `window: 1..2` words that fit `shape`
   (`case`, `script`), stopping at `stop_at` (`punct` always, `stop`,
   `number`, `latin`) — when no gazetteer span of that type overlaps them;
-  otherwise it boosts the overlapping spans. A `negative: true` trigger
-  subtracts its weight from overlapping gazetteer spans of its type.
+  otherwise it boosts the overlapping spans. Its `weight` is added either
+  way: to the candidate it proposes or to the spans it boosts, and
+  `absorb: true` extends both over an adjacent keyword. A `negative: true`
+  trigger subtracts its weight from overlapping gazetteer spans of its type
+  and never proposes or absorbs.
 - A **rule set** with `when: [tags]` is active only for documents whose
   `Doc.Tags` include ALL of them; a set without `when` is always active.
 
@@ -567,7 +599,11 @@ candidate, a set switched on by `period:pre1917`); CLI `extract --rules
 
 **Behaviour in 0.2:**
 - A negative trigger affects only gazetteer spans, never a trigger
-  candidate.
+  candidate. A span whose score drops to 0 or below is removed, so a
+  negative trigger (or negative weights) can delete a match entirely.
+- Hints run before triggers and never boost a trigger candidate.
+- A `Blocked` entry also stops triggers: no candidate of the blocked type
+  is proposed over a range that overlaps the blocked match.
 - A hint measures its window from the span's current edge; after one hint
   absorbed its keyword, the next one measures from the new edge, so results
   can depend on the order of hints.
@@ -575,6 +611,13 @@ candidate, a set switched on by `period:pre1917`); CLI `extract --rules
   that name's own candidate is considered; keep trigger windows short.
 - Rules are compiled once: to change them, build a new `Pipeline`
   (a hot-swap is an open question, [todo](../todo.md)).
+
+**History:**
+- 0.2 (unreleased) — a trigger's `weight` is added to the candidate it
+  proposes (it was ignored there), and `absorb` also extends a gazetteer
+  span the trigger boosts (it extended only proposed candidates, so span
+  ranges depended on whether the gazetteer knew the name). ⚠ re-extract
+  (not bumped: 0.2 is unreleased).
 
 ## 17. Overlapping matches, nesting and explanations
 
@@ -589,8 +632,10 @@ outer/inner type pair listed in `Config.Nesting` (the inner one gets the
 `Nested` flag). A candidate's score is a weighted sum
 (`ner.Weights`, `DefaultWeights()` when zero): per word the origin weight
 (surface 3, lemma 2, trigger 1) plus the type weight, a length bonus per
-word beyond the first (0.5), the hint and trigger evidence, minus an
-ambiguity penalty per extra ref or normal form (0.25). Candidates of other
+word beyond the first (0.5), the hint and trigger evidence, minus the
+ambiguity penalty (0.25) times (the larger of the numbers of distinct refs
+and normal forms − 1). Candidates scoring 0 or below are dropped before
+resolution. Candidates of other
 types on the winner's exact range become `Span.Alternatives`, best first;
 an exact tie is never silent — the span is `Ambiguous`, and ties go to the
 type name. `Doc.Types` hides unwanted types after resolution, so it never
@@ -603,7 +648,7 @@ res, _ := p.Extract(ctx, doc, ner.Explain())
 ```
 
 **Example:** [ner](../../examples/ner/main.go) (evidence of every span);
-CLI `extract --nest city>street --explain`.
+CLI `extract --nest 'city>street' --explain` (quote `>` from the shell).
 
 **Available since:** 0.2 (unreleased).
 
@@ -655,10 +700,11 @@ found in its text); `nertest.Run(ctx, pipeline, cases)` returns a
 `Report` with strict (exact bytes and type) and partial (overlap)
 precision, recall and F1 per type, and the list of missed and spurious
 spans. `Report.Write` prints it; `Report.Check(minPrecision, minRecall)`
-lists the types below the thresholds — an empty list passes.
-`context` is host metadata of the document that lexicon ignores unless
-`nertest.WithTags(func(Case) []string)` turns it into document tags
-(`{"estate": "peasant"}` → `estate:peasant`).
+returns one message per failed threshold («surname: strict recall 0.500 <
+0.900») — an empty list passes. `context` is host metadata of the
+document that lexicon ignores; `nertest.WithTags(func(Case) []string)` adds
+the tags your function derives from it (for example `estate:peasant` from
+`{"estate": "peasant"}` — the mapping is yours, not built in).
 
 ```go
 rep, _ := nertest.Run(ctx, p, cases)
@@ -676,19 +722,27 @@ if v := rep.Check(0.9, 0.9); len(v) > 0 {
 **Task.** Check what a gazetteer and a rule file find in a phrase, or score
 a golden set, without writing Go.
 
-**How.** `lexicon extract --gazetteer FILE --rules FILE [--tags T,...]
-[--explain] [--format table|jsonl] TEXT...` prints one row (or JSON line)
-per span; `-` reads documents from stdin, one per line. `lexicon golden
---gazetteer FILE --rules FILE --cases FILE.jsonl [--min-precision N]
-[--min-recall N]` prints the report and exits with 1 below a threshold.
-Morphology comes from `--dicts` as for `analyze`. See [cli.md](cli.md).
+**How.** `lexicon extract [--gazetteer FILE]... [--rules FILE]...
+[--nest OUTER>INNER]... [--tags T,...] [--types T,...] [--explain]
+[--format table|jsonl] TEXT...` prints one row (or JSON line) per span;
+`-` reads documents from stdin, one per line, each exactly as read
+(offsets refer to the line). `lexicon golden --cases FILE.jsonl
+[--gazetteer FILE]... [--rules FILE]... [--nest OUTER>INNER]...
+[--min-precision N] [--min-recall N]` prints the report and exits with 1
+below a threshold. Morphology comes from `--dicts` and `--ortho` as for
+`analyze`. See [cli.md](cli.md).
 
 **Available since:** 0.2 (unreleased).
 
 **Behaviour in 0.2:** the CLI configures one profile, `text` (every enabled
 dictionary kind), for documents and aliases alike, so a golden case with
 another `profile` fails the run; a gazetteer source is named after its
-file's basename, so two files with the same basename fail as duplicates.
+file's basename without the extension, so `a/x.tsv` and `b/x.txt` fail as
+duplicates.
+
+**History:**
+- 0.2 (unreleased) — `extract -` keeps each stdin line as read; it used to
+  trim spaces, so offsets referred to the trimmed line.
 
 ## Planned: patterns
 

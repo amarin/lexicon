@@ -128,14 +128,14 @@ not guessed ([scenario 4](scenarios.md#4-terms-for-a-search-index),
 
 *(0.2, unreleased)* Runs the NER pipeline
 ([scenarios 15–20](scenarios.md#15-find-entities-with-dictionaries)) over
-each TEXT argument, or over stdin with `-` (one document per line, blank
-lines skipped).
+each TEXT argument, or over stdin with `-` (one document per line, taken
+exactly as read so offsets refer to the line; blank lines skipped).
 
 | Flag | Default | Meaning |
 |---|---|---|
 | `--dicts` | see above | morphology dictionaries, as for `analyze` |
 | `--ortho` | `modern` | orthography rules: `modern`, `prereform` |
-| `--gazetteer FILE` | — | a gazetteer TSV (`type<TAB>ref<TAB>canonical<TAB>alias[<TAB>flags[<TAB>k=v;…]]`); repeatable; the source is named after the file's basename |
+| `--gazetteer FILE` | — | a gazetteer TSV (`type<TAB>ref<TAB>canonical<TAB>alias[<TAB>flags[<TAB>k=v;…]]`); repeatable; the source is named after the file's basename without the extension |
 | `--rules FILE` | — | a rule file, YAML or JSON; repeatable |
 | `--nest OUTER>INNER` | — | allow spans of type INNER inside OUTER; repeatable |
 | `--tags T,...` | — | document tags selecting rule sets |
@@ -151,18 +151,38 @@ surface, normal forms and refs (`|`-joined), flags, score. With
 `--explain` the evidence lines follow the span, then `alt` lines for the
 types that lost on the same range.
 
-With a morphology directory that knows «деревни», «уезда» and
-«Боровского», a `place.tsv` with a village and an uezd and a `place.yaml`
-with the hints of [scenario 16](scenarios.md#16-context-words-triggers-and-document-tags):
+With the OpenCorpora base, this `place.tsv`
+
+```
+division	d1	Лягушкино	Лягушкино		level=village
+division	d2	Боровский	Боровский		level=uezd
+```
+
+and this `place.yaml` ([scenario 16](scenarios.md#16-context-words-triggers-and-document-tags)):
+
+```yaml
+sets:
+  - name: places
+    hints:
+      - {lemma: деревня, type: division, window: 1, weight: 2, absorb: true}
+      - {lemma: уезд, type: division, dir: left, window: 1, weight: 2, absorb: true}
+    triggers:
+      - {lemma: село, type: division, shape: {case: title, script: cyrillic}, absorb: true}
+```
 
 ```bash
-lexicon extract --gazetteer place.tsv --rules place.yaml "из деревни Лягушкино Боровского уезда"
+lexicon extract --gazetteer place.tsv --rules place.yaml "из деревни Лягушкино Боровского уезда и села Покровское"
 ```
 ```
-DOC  START  END  TYPE      SURFACE            NORMAL     REFS  FLAGS  SCORE
-1    5      38   division  деревни Лягушкино  Лягушкино  d1           8.50
-1    39     70   division  Боровского уезда   Боровский  d2           6.50
+DOC  START  END  TYPE      SURFACE            NORMAL                 REFS  FLAGS                SCORE
+1    5      38   division  деревни Лягушкино  Лягушкино              d1                         8.50
+1    39     70   division  Боровского уезда   Боровский              d2                         6.50
+1    74     103  division  села Покровское    покровский|покровское        ambiguous,candidate  3.25
 ```
+
+«села Покровское» is a trigger candidate: no record knows it, its normal
+forms are the lemmas of «Покровское» — two on the real base, hence
+`ambiguous` and the ambiguity penalty.
 
 `--format jsonl` prints one JSON object per span: `doc`, `start`, `end`,
 `rune_start`, `rune_end`, `type`, `surface`, `normal`, `refs`, `attrs`,
@@ -178,7 +198,9 @@ printf 'Лягушкино\nиз Боровского уезда\n' | lexicon ex
 
 **Behaviour in 0.2:** one analyzer profile, `text` (every enabled
 dictionary kind), serves documents and aliases alike; two `--gazetteer`
-files with the same basename fail as a duplicate source name.
+files with the same basename without extension (`a/x.tsv`, `b/x.txt`) fail
+as a duplicate source name. With `--explain` the table columns after an
+evidence block may be misaligned.
 
 ## `golden` — score a golden set
 
@@ -217,4 +239,6 @@ map it to tags; use `nertest.WithTags` from Go), and a case with a
 ## History
 
 - 0.1.0 — `analyze`, `dicts list`, `dicts fetch`.
-- 0.2 (unreleased) — `extract`, `golden`.
+- 0.2 (unreleased) — `extract`, `golden`. `extract -` keeps stdin lines as
+  read (it trimmed them, shifting offsets); the usage text marks optional
+  flags as optional.

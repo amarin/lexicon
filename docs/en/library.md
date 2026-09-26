@@ -258,9 +258,12 @@ TSV: `type<TAB>ref<TAB>canonical<TAB>alias[<TAB>flags[<TAB>k=v;k=v]]`,
 flags comma-separated (`requires_context,surface_only,case_sensitive,blocked`,
 `ParseEntryFlags`); `#` lines are comments, `# key: value` lines (keys
 `[a-z_]`) before the first entry form the manifest (`TSVSource.Manifest()`).
-Its `Version` is the sha256 of the content. A bad line is skipped and
-returned as `*ParseErrors` after every good entry — the builder puts it in
-the report.
+A line has 4 to 6 fields, each trimmed. Its `Version` is the sha256 of
+the content — `NewTSVSource` reads and hashes the whole file on every call.
+A bad line is skipped and returned as `*ParseErrors` after every good
+entry — the builder puts it in the report; a line longer than 1 MiB fails
+the whole source (`SourceReport.Err`). `Manifest()` is empty until the
+first `Entries` call.
 
 | Flag | Effect |
 |---|---|
@@ -288,8 +291,12 @@ type Config struct {
 | `RefreshSource(ctx, name) (SourceReport, error)` | recompile one source regardless of its version; `ErrUnknownSource` |
 | `Canonical(key)`, `Expand(lemma)` | delegate to the current snapshot |
 
-`New` fails only on an invalid configuration; a failing source is in
-`Snapshot().Reports()`. Each alias is analysed (`ModeFull`) with its
+`New` fails on an invalid configuration or a cancelled `ctx` (it runs the
+first `Refresh`); a failing source is in `Snapshot().Reports()`.
+`Refresh` and `RefreshSource` are serialized, so a `Source` is never called
+concurrently by one `Gazetteer`. `Refresh` also retries every source that
+has never built; it returns reports of the sources it rebuilt or whose
+`Version` failed. Each alias is analysed (`ModeFull`) with its
 type's profile into a surface key and lemma keys — an ambiguous word
 expands into combinations, at most `MaxLemmaKeys` (8) per alias.
 `SourceReport` counts entries, aliases, lemma and surface keys, capped and
@@ -301,15 +308,24 @@ blocked aliases, skipped empty ones, the duration and non-fatal `Errors`;
 | Method | |
 |---|---|
 | `Match(tx *Text, out []Match) []Match` | append every alias match in `tx`; allocates only to grow `out` |
-| `Version() string` | changes when any source is recompiled or the profile configuration changes |
+| `Version() string` | changes when a source is rebuilt from a new `Version` or with a new analyzer version (a forced `RefreshSource` of unchanged content keeps it) |
 | `Reports() []SourceReport` | the last report of every source, in configuration order |
 | `Canonical(key) []string` | canonical forms of the aliases whose lemma or surface key (space-joined) is `key` |
 | `Expand(lemma) []string` | lemma keys of every variant group containing `lemma` — for query expansion |
 
+Variant groups are aliases of one source sharing a `Ref`; aliases with an
+empty `Ref` or without lemma keys (`SurfaceOnly`) are not in any group.
+`Blocked` aliases are, and an ambiguous alias contributes every lemma
+(`Expand("сталь")` → `[сталь стать]`). Keys are lower-case normalized
+strings. `ner` does not use the groups: span `Normal` comes from
+`Entry.Canonical`.
+
 `Prepare(terms)` builds a `Text` from `Analyzer.Analyze(ModeFull)` terms.
 A `Match` is content positions `[Start, End)` (words and numbers; map back
 with `Text.TermIndex`), its `Kind` (`ByLemma`, `BySurface`) and the
-`Aliases` whose key ended there. Matches do not cross sentence ends.
+`Aliases` whose key ended there. A match covers consecutive words only:
+any punctuation or symbol between words breaks it (an abbreviation's own
+dot does not).
 Aliases and snapshots are shared and read-only.
 
 ## rules
@@ -338,8 +354,10 @@ type RuleSet struct {
 ```
 
 One YAML document per file (JSON is valid YAML); unknown fields are
-errors. `Load*` errors read `<file>:<line>: <message>`, `Compile` errors
-`<file>:<line>: <set>/<rule>: <message>` (`hint 0`, `trigger 1`).
+errors. Rule errors read `<file>:<line>: <message>`, `Compile` errors
+`<file>:<line>: <set>/<rule>: <message>` (`hint 0`, `trigger 1`); a file
+that cannot be opened (`rules: open …`) or is empty (`<file>: empty rule
+file`) has no line.
 
 | Hint field | YAML | Default | |
 |---|---|---|---|
@@ -347,16 +365,24 @@ errors. `Load*` errors read `<file>:<line>: <message>`, `Compile` errors
 | `Dotted` | `dotted` | false | keyword must be followed by «.» |
 | `Type` | `type` | — | span type it supports |
 | `Dir` | `dir` | `right` | `right`, `left`, `both` |
-| `Window` | `window` | 1 | content words between keyword and span, ≤ `MaxWindow` (8) |
+| `Window` | `window` | 1 | distance in content words from the keyword to the span's edge, ≤ `MaxWindow` (8); 1 = right next to it |
 | `Weight` | `weight` | 1 | added to the span's score |
-| `Absorb` | `absorb` | false | extend the span over the keyword |
+| `Absorb` | `absorb` | false | extend an adjacent span over the keyword |
+
+Hints have no `shape` and never affect trigger candidates (they run
+first).
 
 A `Trigger` has the same `lemma`, `dotted`, `type`, `weight`, `absorb`,
 plus `dir` (`right` or `left`), `window` as a range (`N` = 1..N,
 `"min..max"`), `shape` (`case`: `lower`/`title`/`upper`, `script`:
 `cyrillic`/`latin`) and `stop_at` (`punct` implied, `stop`, `number`,
-`latin`) restricting the words it covers, and `negative` (subtract the
-weight from overlapping gazetteer spans instead of adding it).
+`latin`) restricting the words it covers, and `negative`. A trigger
+proposes a `Candidate` over the covered words when no gazetteer span of
+its type overlaps them, and otherwise boosts those spans; its `weight` is
+added in both cases and `absorb` extends both over an adjacent keyword. A
+`negative` trigger only subtracts its weight from overlapping gazetteer
+spans. No candidate is proposed over a range overlapping a `Blocked` match
+of the type.
 
 | `Book` method | |
 |---|---|
@@ -416,10 +442,23 @@ type Span struct {
 crossing spans; nesting only for `Config.Nesting` pairs) → the
 `Doc.Types` filter. Score = (origin weight + `Types[type]`) × words +
 `LengthBonus` × (words − 1) + hint/trigger evidence − `AmbiguityPenalty` ×
-(alternatives − 1), rounded to 1e-6; `DefaultWeights()` is surface 3,
-lemma 2, trigger 1, length bonus 0.5, ambiguity penalty 0.25. An exact
-tie between types marks the span `Ambiguous` and goes to the type name.
-`New` copies the host's maps. `Extract` is linear in the document size and
+(max(distinct refs, distinct normal forms, 1) − 1), rounded to 1e-6;
+candidates scoring 0 or below are dropped before resolution.
+`DefaultWeights()` is surface 3, lemma 2, trigger 1, length bonus 0.5,
+ambiguity penalty 0.25; it replaces `Config.Weights` only when `Surface`,
+`Lemma` and `Trigger` are all 0 (keeping `Types`) — set one origin weight
+and you set them all. A negative `MinLemmaMatchRunes` disables the short
+lemma filter. An exact tie between types marks the span `Ambiguous` and
+goes to the type name. `Span.Flags`: `Ambiguous` — several refs or normal
+forms, a type tie, or a covered ambiguous abbreviation no rule absorbed
+(homonymy of an ordinary word does not count); `Predicted` — a covered
+word known only by predicted lemmas (not set on surface matches); `Abbrev`,
+`Candidate`, `Nested`. A trigger candidate's `Normal` is the lower-case
+lemma sequences of its words (the absorbed keyword excluded, at most
+`gazetteer.MaxLemmaKeys`).
+
+`New` returns an error for a nil `Analyzer` or `Gazetteer` and for a
+`DefaultProfile` missing from `Profiles`; it copies the host's maps. `Extract` is linear in the document size and
 checks `ctx` between stages.
 
 ## nertest
@@ -451,8 +490,13 @@ func WithTags(f func(Case) []string) Option // extra tags for the extraction onl
 `Partial` — overlap and type; each `Counts{TP, FP, FN}` with
 `Precision()`, `Recall()`, `F1()`) and `Failures` (strict `missed` and
 `spurious` spans). `Report.Write(w)` prints the table and failures;
-`Report.Check(minPrecision, minRecall)` lists the types whose strict
-precision or recall is below the minimum.
+`Report.Check(minPrecision, minRecall)` returns one message per failed
+threshold, e.g. `surname: strict recall 0.500 < 0.900`.
+
+`Run` scores every output span, `Nested` and `Candidate` ones included;
+it cannot set `Doc.Types` and stops at the first `Extract` error.
+`LoadCases` also rejects gold spans with empty text or type, and lines
+over 4 MiB.
 
 ## Contracts
 
