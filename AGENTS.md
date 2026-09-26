@@ -7,7 +7,12 @@ Project instructions for AI agents (Codex, Claude, LGTM).
   dictionary NER over gomorphy. No HTTP/MCP, no logger: packages return errors and
   expose state; hosts (first: genodex, `../genodex`) do the rest.
 - Design: `docs/specs/2026-09-24-lexicon-design.md`. Plans: `docs/plans/`.
-  Implementation write-ups: `docs/implementation/`.
+  Implementation write-ups: `docs/implementation/`. Roadmap and open questions:
+  `docs/todo.md`.
+- User documentation: `docs/en/` (index, scenarios, installation, cli, library) and
+  the same pages in Russian in `docs/ru/`. Runnable examples: `examples/<name>/main.go`
+  (checked by `examples/examples_test.go`); godoc examples: `example_test.go`,
+  `textnorm/example_test.go`.
 - Packages: `textnorm` (orthography rule sets, tokenizer with byte + rune offsets,
   pre-reform endings; no dictionaries), root package `lexicon` (dictionary registry,
   profiles, `Analyzer`), `basefetch` (optional: download and compile the OpenCorpora
@@ -15,6 +20,8 @@ Project instructions for AI agents (Codex, Claude, LGTM).
 
 ## Conventions
 - Code comments, error texts, docs, CLI output: English. Test fixtures: Russian text.
+  Exception: `docs/ru/` holds Russian translations of the `docs/en/` user pages;
+  project documents (spec, plans, write-ups, todo) stay English only.
 - One struct (or named type with methods) per file; helpers live in the file of their
   main function; snake_case file names.
 - Dependencies between packages are interfaces declared in the consumer's `deps.go`.
@@ -36,16 +43,28 @@ Project instructions for AI agents (Codex, Claude, LGTM).
   produced terms requires bumping `analyzerVersion` (hosts reindex). Host profile
   definitions are not part of `Analyzer.Version`: hosts version their profiles
   themselves.
+- Documentation follows behaviour, in both `docs/en/` and `docs/ru/`:
+  - a new user-visible feature gets a scenario in `scenarios.md` ("Available since"),
+    an entry in `library.md`/`cli.md`, and a runnable example (an `// Output:` block
+    when it needs no downloaded data) or an `ExampleXxx` function;
+  - a behaviour change moves or adds a line under the scenario's **History**
+    (a "Behaviour in X" line becomes history when it changes) and marks
+    ⚠ reindex when it bumps `Rules.Version` or `analyzerVersion`; CHANGELOG stays
+    the source of truth;
+  - README marks features with the version they appear in (`*(0.1.0)*`,
+    `*(planned: 0.2)*`).
 
 ## Main commands
 - `go build ./...`, `go vet ./...`, `gofmt -l .` (must be empty).
-- `go test ./... -count=1`; `go test -race ./... -count=1`.
+- `go test ./... -count=1`; `go test -race ./... -count=1` (includes `go test ./examples/`,
+  which builds and runs every example with an `// Output:` block; `-short` skips it).
 - `go test ./textnorm/ -run '^$' -fuzz FuzzTokenize -fuzztime 30s` — one fuzz target per run.
 - `go test ./... -run '^$' -bench . -benchmem` — benchmarks.
 - `LEXICON_BASE_DAT=/path/base.opencorpora.dat go test -tags integration ./... -count=1` —
   tests with the real base dictionary (`LEXICON_FETCH=1` also exercises the download).
 - `go run ./cmd/lexicon analyze [--dicts DIR] [--ortho modern|prereform] [--profile SPEC] [--mode index|full] TEXT...`
 - `go run ./cmd/lexicon dicts list|fetch [--dicts DIR]`
+- `go run ./examples/<name>` — runnable examples (`examples/README.md`).
 
 ## Sibling modules during development
 - gomorphy is used as a released module (currently v1.2.0): `go.mod` requires it
