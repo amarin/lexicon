@@ -58,6 +58,12 @@ Notable changes of the project are recorded in this file (format inspired by
   follow-ups.
 - README marks every feature with the version it appears in and separates
   released from planned.
+- Dictionary NER in the user documentation (EN + RU): scenarios 15–20
+  (entities with dictionaries, rules and document tags, overlaps and
+  explanations, gazetteer refresh, golden sets, the CLI), `gazetteer`,
+  `rules`, `ner` and `nertest` in the library reference, `extract` and
+  `golden` in the CLI page; runnable examples `ner`, `gazetteer` and
+  `golden`, checked by `go test ./examples/`.
 
 ## [0.1.0] - 2026-09-25
 

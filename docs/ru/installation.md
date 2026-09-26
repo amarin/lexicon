@@ -20,7 +20,9 @@ go get github.com/amarin/lexicon
 |---|---|
 | `github.com/amarin/lexicon` (корень), `textnorm` | `gomorphy/pkg/morphology`, `golang.org/x/text` |
 | `basefetch` (необязательный) | то же плюс `gomorphy/pkg/pymorphy` и `github.com/amarin/logging` (zap) |
-| `cmd/lexicon` | то же (использует `basefetch`) |
+| `gazetteer` *(0.2, не выпущено)* | только корневой пакет и `textnorm` |
+| `rules`, `ner`, `nertest` *(0.2, не выпущено)* | то же плюс `go.yaml.in/yaml/v3` (файлы правил) |
+| `cmd/lexicon` | всё перечисленное (использует `basefetch` и `ner`) |
 
 Хост, не импортирующий `basefetch`, не компилирует ни загрузчик pymorphy,
 ни zap.
@@ -50,8 +52,13 @@ lexicon dicts fetch --dicts /var/lib/app/dicts
 словари — это файлы TSV или `.dat` в том же каталоге или встроенные
 словари ([сценарий 10](scenarios.md#10-свои-словари-файлы-и-встроенные)).
 
+Газетиры и файлы правил для извлечения сущностей — тоже данные хоста:
+файлы TSV и YAML или источники в памяти
+([сценарий 15](scenarios.md#15-найти-сущности-по-словарям)).
+
 Всё, кроме базового словаря, можно попробовать без скачивания:
-`go run ./examples/index` и другие [примеры](../../examples/README.md).
+`go run ./examples/index`, `go run ./examples/ner` и другие
+[примеры](../../examples/README.md).
 
 ## Платформы
 

@@ -20,7 +20,9 @@ What each package brings into your binary:
 |---|---|
 | `github.com/amarin/lexicon` (root), `textnorm` | `gomorphy/pkg/morphology`, `golang.org/x/text` |
 | `basefetch` (optional) | the above plus `gomorphy/pkg/pymorphy` and `github.com/amarin/logging` (zap) |
-| `cmd/lexicon` | the above (it uses `basefetch`) |
+| `gazetteer` *(0.2, unreleased)* | the root package and `textnorm` only |
+| `rules`, `ner`, `nertest` *(0.2, unreleased)* | the above plus `go.yaml.in/yaml/v3` (rule files) |
+| `cmd/lexicon` | all of the above (it uses `basefetch` and `ner`) |
 
 A host that does not import `basefetch` never compiles the pymorphy loader
 or zap.
@@ -49,8 +51,13 @@ binary through `Options.Base`
 Your own dictionaries are TSV or `.dat` files in the same directory, or
 built-ins ([scenario 10](scenarios.md#10-your-own-dictionaries-files-and-built-ins)).
 
+Gazetteers and rule files for entity extraction are host data too: TSV and
+YAML files or in-memory sources
+([scenario 15](scenarios.md#15-find-entities-with-dictionaries)).
+
 Everything except the base can be tried with no download:
-`go run ./examples/index` and the other [examples](../../examples/README.md).
+`go run ./examples/index`, `go run ./examples/ner` and the other
+[examples](../../examples/README.md).
 
 ## Platforms
 

@@ -9,6 +9,10 @@ godoc каждого символа; эта страница группируе�
 - [textnorm](#textnorm) — орфография и токены, без словарей
 - [lexicon](#lexicon) — словари (`Registry`), `Profile`, `Analyzer`
 - [basefetch](#basefetch) — скачивание базового словаря
+- [gazetteer](#gazetteer) — записи хоста, скомпилированные для сопоставления *(0.2, не выпущено)*
+- [rules](#rules) — подсказки, триггеры, наборы правил по тегам документа *(0.2, не выпущено)*
+- [ner](#ner) — конвейер извлечения *(0.2, не выпущено)*
+- [nertest](#nertest) — оценка на эталонном наборе *(0.2, не выпущено)*
 - [Контракты](#контракты) — смещения, версии, конкурентность, ошибки
 
 ## textnorm
@@ -223,6 +227,238 @@ func Fetch(dst string) (version string, err error)
 `lexicon.ManifestPath(dst)`. Нужна сеть. Пакет тянет загрузчик pymorphy
 из gomorphy и zap; импортируйте его только там, где скачиваете.
 
+## gazetteer
+
+`import "github.com/amarin/lexicon/gazetteer"` — *(0.2, не выпущено)*
+
+Компилирует псевдонимы записей хоста в префиксные деревья по токенам и
+сопоставляет их с разобранным текстом. Сообщает о каждом совпадении,
+включая пересекающиеся; выбирать между ними — работа `ner`. Импортирует
+только корневой пакет и `textnorm`.
+
+### Записи и источники
+
+```go
+type Entry struct {
+    Alias     string            // текст псевдонима: «дер. Лягушкино», «СПб»
+    Type      string            // тип сущности хоста: "surname", "division", …
+    Ref       string            // непрозрачный ключ хоста; псевдонимы с общим Ref — варианты одной записи
+    Canonical string            // нормальная форма записи; пусто — Alias
+    Attrs     map[string]string // передаются в спаны как есть
+    Flags     EntryFlag         // RequiresContext, SurfaceOnly, CaseSensitive, Blocked
+}
+type Source interface {
+    Name() string                                                // уникально в пределах Gazetteer
+    Version(ctx context.Context) (string, error)                 // дешёвый; не изменилась — без перекомпиляции
+    Entries(ctx context.Context, yield func(Entry) error) error // останавливается на первой ошибке yield
+}
+func NewTSVSource(name, path string) *TSVSource        // читает path при каждом Version/Entries
+func NewTSVSourceData(name string, data []byte) *TSVSource // из памяти, например //go:embed
+func NewSliceSource(name, version string, entries []Entry) *SliceSource
+```
+
+TSV: `type<TAB>ref<TAB>canonical<TAB>alias[<TAB>flags[<TAB>k=v;k=v]]`,
+флаги через запятую (`requires_context,surface_only,case_sensitive,blocked`,
+`ParseEntryFlags`); строки на `#` — комментарии, строки `# key: value`
+(ключи `[a-z_]`) до первой записи образуют манифест
+(`TSVSource.Manifest()`). `Version` — sha256 содержимого. Плохая строка
+пропускается и возвращается как `*ParseErrors` после всех хороших записей
+— сборщик кладёт её в отчёт.
+
+| Флаг | Действие |
+|---|---|
+| `RequiresContext` | остаётся, только если совпадение поддержала подсказка или триггер |
+| `SurfaceOnly` | без ключа по леммам: сопоставляется только по нормализованной форме |
+| `CaseSensitive` | остаётся, только если у каждого слова регистр как у псевдонима |
+| `Blocked` | запрещает любое совпадение типа записи на этом диапазоне, независимо от остальных флагов |
+
+### Gazetteer
+
+```go
+func New(ctx context.Context, cfg Config) (*Gazetteer, error)
+type Config struct {
+    Analyzer       Analyzer                   // *lexicon.Analyzer; его Version входит в каждый скомпилированный источник
+    TypeProfiles   map[string]lexicon.Profile // профиль на тип записи
+    DefaultProfile lexicon.Profile            // для остальных типов
+    Sources        []Source                   // компилируются по порядку; имена уникальны и непусты
+}
+```
+
+| Метод | |
+|---|---|
+| `Snapshot() *Snapshot` | текущее скомпилированное состояние, без блокировок; держите его на время одной операции |
+| `Refresh(ctx) ([]SourceReport, error)` | перекомпилировать источники, у которых изменилась `Version` (или версия анализатора); атомарная подмена |
+| `RefreshSource(ctx, name) (SourceReport, error)` | перекомпилировать один источник независимо от версии; `ErrUnknownSource` |
+| `Canonical(key)`, `Expand(lemma)` | делегируют текущему снимку |
+
+`New` падает только на неверной конфигурации; сбой источника виден в
+`Snapshot().Reports()`. Каждый псевдоним разбирается (`ModeFull`) с
+профилем своего типа в ключ по поверхности и ключи по леммам —
+неоднозначное слово раскрывается в комбинации, не больше `MaxLemmaKeys`
+(8) на псевдоним. `SourceReport` считает записи, псевдонимы, ключи по
+леммам и по поверхности, урезанные и заблокированные псевдонимы,
+пропущенные пустые, длительность и нефатальные `Errors`; `Err` — фатальный
+сбой, после которого источник сохраняет прежние данные.
+
+### Snapshot и сопоставление
+
+| Метод | |
+|---|---|
+| `Match(tx *Text, out []Match) []Match` | дописать в `out` каждое совпадение псевдонима в `tx`; память выделяется только на рост `out` |
+| `Version() string` | меняется, когда перекомпилирован любой источник или изменилась конфигурация профилей |
+| `Reports() []SourceReport` | последний отчёт каждого источника, в порядке конфигурации |
+| `Canonical(key) []string` | канонические формы псевдонимов, чей ключ по леммам или по поверхности (через пробел) равен `key` |
+| `Expand(lemma) []string` | ключи по леммам всех групп вариантов, содержащих `lemma`, — для расширения запроса |
+
+`Prepare(terms)` строит `Text` из термов `Analyzer.Analyze(ModeFull)`.
+`Match` — это значимые позиции `[Start, End)` (слова и числа; обратно в
+термы — через `Text.TermIndex`), способ `Kind` (`ByLemma`, `BySurface`) и
+псевдонимы `Aliases`, чей ключ закончился здесь. Совпадения не переходят
+через конец предложения. Псевдонимы и снимки общие и только для чтения.
+
+## rules
+
+`import "github.com/amarin/lexicon/rules"` — *(0.2, не выпущено)*
+
+Правила как данные, проверенные и собранные в неизменяемую `Book`.
+Импортирует `go.yaml.in/yaml/v3`.
+
+```go
+func Load(r io.Reader) (File, error)              // в ошибках — "<input>"
+func LoadNamed(name string, r io.Reader) (File, error)
+func LoadFile(path string) (File, error)          // .yaml, .yml или .json
+func Compile(files ...File) (*Book, error)        // имена наборов уникальны во всех файлах
+
+type File struct {
+    Meta map[string]string // `meta:` — source, license, version, url, generated_from
+    Sets []RuleSet         // `sets:`
+}
+type RuleSet struct {
+    Name     string    // `name:`
+    When     []string  // `when:` — активен, когда у документа есть ВСЕ эти теги; пусто — всегда
+    Hints    []Hint
+    Triggers []Trigger
+}
+```
+
+Один документ YAML на файл (JSON — тоже YAML); неизвестные поля —
+ошибка. Ошибки `Load*` выглядят как `<file>:<line>: <message>`, ошибки
+`Compile` — `<file>:<line>: <set>/<rule>: <message>` (`hint 0`,
+`trigger 1`).
+
+| Поле подсказки | YAML | По умолчанию | |
+|---|---|---|---|
+| `Lemma` | `lemma` | — | лемма или форма ключевого слова, варианты через `\|` |
+| `Dotted` | `dotted` | false | за ключевым словом должна идти «.» |
+| `Type` | `type` | — | тип спанов, которые она поддерживает |
+| `Dir` | `dir` | `right` | `right`, `left`, `both` |
+| `Window` | `window` | 1 | значимых слов между ключевым словом и спаном, ≤ `MaxWindow` (8) |
+| `Weight` | `weight` | 1 | прибавляется к оценке спана |
+| `Absorb` | `absorb` | false | расширить спан на ключевое слово |
+
+У `Trigger` те же `lemma`, `dotted`, `type`, `weight`, `absorb`, а
+также `dir` (`right` или `left`), `window` как диапазон (`N` = 1..N,
+`"min..max"`), `shape` (`case`: `lower`/`title`/`upper`, `script`:
+`cyrillic`/`latin`) и `stop_at` (`punct` подразумевается, `stop`,
+`number`, `latin`), ограничивающие покрываемые слова, и `negative`
+(вычитать вес из перекрывающих спанов газетира вместо прибавления).
+
+| Метод `Book` | |
+|---|---|
+| `Active(tags) Active` | подсказки и триггеры наборов, все теги `When` которых есть в `tags`, в порядке файлов и наборов; общие, не изменяйте |
+| `Sets() []string` | имена наборов по порядку |
+| `Version() string` | меняется при изменении любого правила или значения meta |
+
+Ключевые слова сравниваются после `textnorm.NormalizeWord(textnorm.PreReform, …)`
+и без завершающей точки, какую бы орфографию ни использовал документ.
+
+## ner
+
+`import "github.com/amarin/lexicon/ner"` — *(0.2, не выпущено)*
+
+```go
+func New(cfg Config) (*Pipeline, error)
+type Config struct {
+    Analyzer           Analyzer                   // *lexicon.Analyzer
+    Gazetteer          Gazetteer                  // *gazetteer.Gazetteer
+    Rules              *rules.Book                // nil — без правил
+    Profiles           map[string]lexicon.Profile // Doc.Profile → профиль анализатора
+    DefaultProfile     string
+    Nesting            map[string][]string        // внешний тип → внутренние типы, допустимые внутри него
+    Weights            Weights                    // DefaultWeights(), если Surface, Lemma и Trigger все 0
+    MinLemmaMatchRunes int                        // отбрасывать однословные совпадения только по лемме у более коротких псевдонимов; 0 → 3
+}
+func (p *Pipeline) Extract(ctx context.Context, d Doc, opts ...Option) (Result, error)
+func Explain() Option // заполнить Span.Evidence
+
+type Doc struct {
+    Text    string
+    Profile string   // пусто — Config.DefaultProfile; неизвестный — ErrUnknownProfile
+    Tags    []string // выбирают наборы правил
+    Types   []string // фильтр результата, после разрешения
+}
+type Result struct {
+    Spans   []Span // по Start, затем длинные первыми, затем по Type
+    Version string // экстрактор, анализатор, снимок газетира, правила, конфигурация
+}
+type Span struct {
+    Start, End         int // байты в Doc.Text; Doc.Text[Start:End] == Surface
+    RuneStart, RuneEnd int // кодовые точки
+    Surface, Type      string
+    Normal             []string          // канонические формы; >1 при неоднозначности
+    Refs               []string          // ссылки газетира; пусто у кандидата
+    Attrs              map[string]string // атрибуты записей, конфликтующие ключи отброшены
+    Flags              SpanFlag          // Ambiguous, Predicted, Abbrev, Candidate, Nested
+    Score              float32
+    Evidence           []string          // с Explain
+    Alternatives       []Alternative     // проигравшие типы на том же диапазоне, лучшие первыми
+}
+```
+
+`Extract` выполняет: разбор (`ModeFull`) → совпадения газетира → фильтры
+(`Blocked`, `CaseSensitive`, короткие совпадения по лемме) → подсказки →
+триггеры → фильтр `RequiresContext` → оценка → взвешенное планирование
+интервалов (без пересечений; вложенность только для пар из
+`Config.Nesting`) → фильтр `Doc.Types`. Оценка = (вес происхождения +
+`Types[type]`) × слова + `LengthBonus` × (слова − 1) + вклад подсказок и
+триггеров − `AmbiguityPenalty` × (варианты − 1), с округлением до 1e-6;
+`DefaultWeights()`: поверхность 3, лемма 2, триггер 1, бонус за длину
+0,5, штраф за неоднозначность 0,25. Точная ничья между типами помечает
+спан `Ambiguous` и разрешается по имени типа. `New` копирует карты хоста.
+`Extract` линеен по размеру документа и проверяет `ctx` между этапами.
+
+## nertest
+
+`import "github.com/amarin/lexicon/nertest"` — *(0.2, не выпущено)*
+
+```go
+type Case struct {
+    ID      string            `json:"id,omitempty"`      // нет — "line<N>"
+    Text    string            `json:"text"`
+    Profile string            `json:"profile,omitempty"`
+    Tags    []string          `json:"tags,omitempty"`
+    Spans   []Gold            `json:"spans"`
+    Context map[string]string `json:"context,omitempty"` // данные хоста, игнорируются без WithTags
+}
+type Gold struct {
+    Text       string `json:"text"`
+    Type       string `json:"type"`
+    Occurrence int    `json:"occurrence,omitempty"` // с 1, по умолчанию 1
+}
+func LoadCases(r io.Reader) ([]Case, error) // JSON Lines; пустые строки пропускаются; неизвестные поля — ошибка
+func LoadCasesFile(path string) ([]Case, error)
+func Run(ctx context.Context, ex Extractor, cases []Case, opts ...Option) (*Report, error)
+func WithTags(f func(Case) []string) Option // дополнительные теги только для извлечения
+```
+
+`Extractor` — всё, у чего есть `Extract` как у `ner.Pipeline`. В `Report`
+есть `Cases`, `Types map[string]*TypeScore` (`Strict` — точные байты и
+тип, `Partial` — пересечение и тип; каждый — `Counts{TP, FP, FN}` с
+`Precision()`, `Recall()`, `F1()`) и `Failures` (строгие `missed` и
+`spurious`). `Report.Write(w)` печатает таблицу и ошибки;
+`Report.Check(minPrecision, minRecall)` перечисляет типы, у которых
+строгая точность или полнота ниже минимума.
+
 ## Контракты
 
 - **Смещения.** Смещения указывают на вход ровно в том виде, как он
@@ -234,10 +470,17 @@ func Fetch(dst string) (version string, err error)
   термы, поднимают `Rules.Version` или версию анализатора; храните значение
   с производными данными и пересобирайте их при изменении
   ([сценарий 13](scenarios.md#13-понять-когда-переиндексировать)).
+  `ner.Result.Version` делает то же для извлечённых спанов: покрывает
+  версию экстрактора, `Analyzer.Version()`, `Snapshot.Version()` газетира,
+  `Book.Version()` и конфигурацию конвейера.
 - **Конкурентность.** `Registry` и `Analyzer` безопасны для конкурентного
   использования. `Parse` не блокируется; `SetEnabled`, `Reload` и `Close`
   атомарно подменяют снимки и закрывают старые словари после начатых
   вызовов.
+  `Gazetteer`, `Snapshot`, `Book` и `Pipeline` тоже безопасны для
+  конкурентного использования: `Refresh` атомарно подменяет снимки
+  газетира, а каждый `Extract` фиксирует один снимок (только снимок —
+  анализатор и его реестр остаются живыми).
 - **Файлы.** Заменяйте файлы словарей атомарно (временный файл +
   переименование): `.dat` отображается в память.
 - **Ошибки, без логирования.** Пакеты возвращают ошибки и показывают

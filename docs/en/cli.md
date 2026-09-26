@@ -2,8 +2,9 @@
 
 > Russian version: [docs/ru/cli.md](../ru/cli.md).
 
-`cmd/lexicon` is a small tool for trying the analysis on a phrase and
-managing a dictionary directory. Hosts use the library; the CLI is for
+`cmd/lexicon` is a small tool for trying the analysis and entity
+extraction on a phrase, scoring a golden set, and managing a dictionary
+directory. Hosts use the library; the CLI is for
 people.
 
 ```bash
@@ -16,7 +17,11 @@ go run ./cmd/lexicon ...
 lexicon analyze [--dicts DIR] [--ortho modern|prereform] [--profile NAME[:KIND[G1|G2],KIND...]] [--mode index|full] TEXT...
 lexicon dicts list [--dicts DIR]
 lexicon dicts fetch [--dicts DIR] [--force]
+lexicon extract [--dicts DIR] [--ortho modern|prereform] [--gazetteer FILE]... [--rules FILE]... [--nest OUTER>INNER]... [--tags T,...] [--types T,...] [--explain] [--format table|jsonl] TEXT...|-
+lexicon golden --cases FILE.jsonl [--dicts DIR] [--ortho modern|prereform] [--gazetteer FILE]... [--rules FILE]... [--nest OUTER>INNER]... [--min-precision N] [--min-recall N]
 ```
+
+`extract` and `golden` are *(0.2, unreleased)*.
 
 Flags go before the text. Exit codes: 0 — success, 1 — failure, 2 — usage
 error.
@@ -119,6 +124,97 @@ Under the `name` profile «сын» has no name reading and is `unknown`,
 not guessed ([scenario 4](scenarios.md#4-terms-for-a-search-index),
 "Behaviour in 0.1.0").
 
+## `extract` — entity spans of a text
+
+*(0.2, unreleased)* Runs the NER pipeline
+([scenarios 15–20](scenarios.md#15-find-entities-with-dictionaries)) over
+each TEXT argument, or over stdin with `-` (one document per line, blank
+lines skipped).
+
+| Flag | Default | Meaning |
+|---|---|---|
+| `--dicts` | see above | morphology dictionaries, as for `analyze` |
+| `--ortho` | `modern` | orthography rules: `modern`, `prereform` |
+| `--gazetteer FILE` | — | a gazetteer TSV (`type<TAB>ref<TAB>canonical<TAB>alias[<TAB>flags[<TAB>k=v;…]]`); repeatable; the source is named after the file's basename |
+| `--rules FILE` | — | a rule file, YAML or JSON; repeatable |
+| `--nest OUTER>INNER` | — | allow spans of type INNER inside OUTER; repeatable |
+| `--tags T,...` | — | document tags selecting rule sets |
+| `--types T,...` | — | print only these span types (applied after resolution) |
+| `--explain` | off | print the evidence of every span |
+| `--format` | `table` | `table` or `jsonl` |
+
+Bad gazetteer lines are warnings on stderr; a gazetteer that fails as a
+whole, an invalid rule file or a bad `--nest` stops the command.
+
+A table row per span: document number (1-based), byte offsets, type,
+surface, normal forms and refs (`|`-joined), flags, score. With
+`--explain` the evidence lines follow the span, then `alt` lines for the
+types that lost on the same range.
+
+With a morphology directory that knows «деревни», «уезда» and
+«Боровского», a `place.tsv` with a village and an uezd and a `place.yaml`
+with the hints of [scenario 16](scenarios.md#16-context-words-triggers-and-document-tags):
+
+```bash
+lexicon extract --gazetteer place.tsv --rules place.yaml "из деревни Лягушкино Боровского уезда"
+```
+```
+DOC  START  END  TYPE      SURFACE            NORMAL     REFS  FLAGS  SCORE
+1    5      38   division  деревни Лягушкино  Лягушкино  d1           8.50
+1    39     70   division  Боровского уезда   Боровский  d2           6.50
+```
+
+`--format jsonl` prints one JSON object per span: `doc`, `start`, `end`,
+`rune_start`, `rune_end`, `type`, `surface`, `normal`, `refs`, `attrs`,
+`flags`, `score`, `evidence`, `alternatives` (empty fields omitted).
+
+```bash
+printf 'Лягушкино\nиз Боровского уезда\n' | lexicon extract --gazetteer place.tsv --rules place.yaml --format jsonl -
+```
+```
+{"doc":1,"start":0,"end":18,"rune_start":0,"rune_end":9,"type":"division","surface":"Лягушкино","normal":["Лягушкино"],"refs":["d1"],"attrs":{"level":"village"},"score":3}
+{"doc":2,"start":5,"end":36,"rune_start":3,"rune_end":19,"type":"division","surface":"Боровского уезда","normal":["Боровский"],"refs":["d2"],"attrs":{"level":"uezd"},"score":6.5}
+```
+
+**Behaviour in 0.2:** one analyzer profile, `text` (every enabled
+dictionary kind), serves documents and aliases alike; two `--gazetteer`
+files with the same basename fail as a duplicate source name.
+
+## `golden` — score a golden set
+
+*(0.2, unreleased)* Runs the pipeline over golden cases
+([scenario 19](scenarios.md#19-measure-quality-on-a-golden-set)) and
+prints strict (`P`, `R`, `F1`: exact bytes and type) and partial (`P~`,
+`R~`, `F1~`: overlap) scores per type, the strict counts, and every missed
+or spurious span.
+
+| Flag | Default | Meaning |
+|---|---|---|
+| `--cases FILE` | — (required) | golden cases, JSON lines |
+| `--min-precision N` | 0 | fail when a type's strict precision is below N |
+| `--min-recall N` | 0 | fail when a type's strict recall is below N |
+| `--dicts`, `--ortho`, `--gazetteer`, `--rules`, `--nest` | | as for `extract` |
+
+```bash
+lexicon golden --gazetteer place.tsv --rules place.yaml --cases cases.jsonl --min-precision 0.9
+```
+```
+TYPE      P      R      F1     P~     R~     F1~    TP  FP  FN
+division  0.750  1.000  0.857  0.750  1.000  0.857  3   1   0
+cases: 2, failures: 1
+spurious	bare	division	«Боровский»
+golden: division: strict precision 0.750 < 0.900
+lexicon: golden: below threshold
+```
+
+The last two lines go to stderr, and the exit code is 1 — usable as a CI
+gate.
+
+**Behaviour in 0.2:** a case's `context` is ignored (the CLI has no way to
+map it to tags; use `nertest.WithTags` from Go), and a case with a
+`profile` other than `text` fails the run.
+
 ## History
 
 - 0.1.0 — `analyze`, `dicts list`, `dicts fetch`.
+- 0.2 (unreleased) — `extract`, `golden`.

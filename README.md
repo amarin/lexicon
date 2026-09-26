@@ -17,17 +17,17 @@ a document:
   profile for each field (names, places, general vocabulary); pre-reform
   adjective endings and abbreviations of records; search-index terms,
   search-query parsing and per-token markup from one analyzer.
-- **Dictionary NER** *(unreleased: 0.2)*. Multi-word
-  aliases matched by lemmas or surface forms, variant groups, abbreviation
-  hints, trigger words and rule sets switched on by document tags *(0.2)*;
-  pattern rules *(planned: 0.3)*.
-  Overlapping matches are resolved, and every span can explain why it was
-  produced.
+- **Dictionary NER** *(0.2, unreleased)*. Multi-word aliases matched by
+  lemmas or surface forms, variant groups, abbreviation hints, trigger
+  words, and rule sets switched on by document tags; pattern rules
+  *(planned: 0.3)*. Overlapping matches are resolved, and every span can
+  explain why it was produced. A golden-set harness measures precision and
+  recall per entity type.
 - **Dictionaries as data.** Morphology dictionaries are gomorphy `.dat` or
   TSV files with provenance manifests, switched on and off and hot-reloaded
   without locking readers *(0.1.0)*. Gazetteers as TSV and rules as YAML,
-  rebuilt one source in milliseconds and swapped in atomically *(unreleased:
-  0.2)*.
+  rebuilt one source in milliseconds and swapped in atomically *(0.2,
+  unreleased)*.
 
 What each feature is for, how to use it and since which version:
 [usage scenarios](docs/en/scenarios.md) ([по-русски](docs/ru/scenarios.md)).
@@ -38,13 +38,13 @@ What each feature is for, how to use it and since which version:
   query time *(0.1.0)*
 - Entity extraction from archival and historical documents (parish
   registers, censuses, letters) — the text analysis *(0.1.0)*, dictionary
-  NER *(unreleased: 0.2)*
+  NER *(0.2, unreleased)*
 - Genealogy and digital-humanities tools
 - Pre-annotation of text before human review, or a lightweight provider
   inside a larger NER pipeline — per-token markup *(0.1.0)*, entity spans
-  *(unreleased: 0.2)*
+  *(0.2, unreleased)*
 - Domain-specific NER where you control the entity types and dictionaries
-  *(unreleased: 0.2)*
+  *(0.2, unreleased)*
 
 lexicon only marks up text. It does not link the spans it finds to your
 data: resolving a mention to a specific person or place, storing the
@@ -101,8 +101,25 @@ query := a.ParseQuery("Кузнецов", name)                         // for a
 version := a.Version() // store with derived data; rebuild when it changes
 ```
 
+Dictionary NER *(0.2, unreleased)* on the same analyzer:
+
+```go
+text := lexicon.Profile{Name: "text"} // all dictionaries
+gz, err := gazetteer.New(ctx, gazetteer.Config{
+	Analyzer: a, DefaultProfile: text,
+	Sources:  []gazetteer.Source{gazetteer.NewTSVSource("places", "place.tsv")}, // type, ref, canonical, alias
+})
+rf, err := rules.LoadFile("place.yaml") // hints, triggers, rule sets by document tags
+book, err := rules.Compile(rf)
+p, err := ner.New(ner.Config{Analyzer: a, Gazetteer: gz, Rules: book,
+	Profiles: map[string]lexicon.Profile{"text": text}, DefaultProfile: "text"})
+res, err := p.Extract(ctx, ner.Doc{Text: "из деревни Лягушкино Боровского уезда", Tags: []string{"period:pre1917"}})
+// res.Spans: offsets, type, host refs, normal forms, flags; res.Version to store
+```
+
 Runnable programs for every scenario, most with no download:
-[examples/](examples/README.md) (`go run ./examples/index`).
+[examples/](examples/README.md) (`go run ./examples/index`, `go run
+./examples/ner`).
 
 Replace dictionary files atomically (write a temporary file, rename), then call
 `reg.Reload(ctx)`: `.dat` files are memory-mapped.
@@ -114,8 +131,8 @@ go run ./cmd/lexicon dicts fetch                      # base dictionary into ~/.
 go run ./cmd/lexicon dicts list
 go run ./cmd/lexicon analyze --ortho prereform "Кр-нин с. Покровскаго, 1834 г."
 go run ./cmd/lexicon analyze --mode full --profile 'name:base[Name|Surn|Patr],surname' "У Ивана сын Петр"
-go run ./cmd/lexicon extract --gazetteer place.tsv --rules place.yaml "деревня Покровское"  # unreleased, 0.2
-go run ./cmd/lexicon golden --gazetteer place.tsv --rules place.yaml --cases cases.jsonl    # unreleased, 0.2
+go run ./cmd/lexicon extract --gazetteer place.tsv --rules place.yaml "деревня Покровское"  # 0.2, unreleased
+go run ./cmd/lexicon golden --gazetteer place.tsv --rules place.yaml --cases cases.jsonl    # 0.2, unreleased
 ```
 
 Flags, output format and sample output: [CLI](docs/en/cli.md).

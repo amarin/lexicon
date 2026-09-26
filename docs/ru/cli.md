@@ -2,8 +2,9 @@
 
 > English version: [docs/en/cli.md](../en/cli.md).
 
-`cmd/lexicon` — небольшая утилита, чтобы попробовать анализ на фразе и
-управлять каталогом словарей. Хосты используют библиотеку; CLI — для
+`cmd/lexicon` — небольшая утилита, чтобы попробовать анализ и извлечение
+сущностей на фразе, оценить эталонный набор и управлять каталогом
+словарей. Хосты используют библиотеку; CLI — для
 людей.
 
 ```bash
@@ -16,7 +17,11 @@ go run ./cmd/lexicon ...
 lexicon analyze [--dicts DIR] [--ortho modern|prereform] [--profile NAME[:KIND[G1|G2],KIND...]] [--mode index|full] TEXT...
 lexicon dicts list [--dicts DIR]
 lexicon dicts fetch [--dicts DIR] [--force]
+lexicon extract [--dicts DIR] [--ortho modern|prereform] [--gazetteer FILE]... [--rules FILE]... [--nest OUTER>INNER]... [--tags T,...] [--types T,...] [--explain] [--format table|jsonl] TEXT...|-
+lexicon golden --cases FILE.jsonl [--dicts DIR] [--ortho modern|prereform] [--gazetteer FILE]... [--rules FILE]... [--nest OUTER>INNER]... [--min-precision N] [--min-recall N]
 ```
+
+`extract` и `golden` — *(0.2, не выпущено)*.
 
 Флаги идут перед текстом. Коды выхода: 0 — успех, 1 — ошибка, 2 — ошибка
 использования.
@@ -119,6 +124,98 @@ lexicon analyze --mode full --profile 'name:base[Name|Surn|Patr]' "У Ивана
 угадано ([сценарий 4](scenarios.md#4-термы-для-поискового-индекса),
 «Поведение в 0.1.0»).
 
+## `extract` — спаны сущностей в тексте
+
+*(0.2, не выпущено)* Запускает конвейер NER
+([сценарии 15–20](scenarios.md#15-найти-сущности-по-словарям)) по каждому
+аргументу TEXT или по stdin при `-` (документ на строку, пустые строки
+пропускаются).
+
+| Флаг | По умолчанию | Значение |
+|---|---|---|
+| `--dicts` | см. выше | словари морфологии, как у `analyze` |
+| `--ortho` | `modern` | правила орфографии: `modern`, `prereform` |
+| `--gazetteer FILE` | — | TSV газетира (`type<TAB>ref<TAB>canonical<TAB>alias[<TAB>flags[<TAB>k=v;…]]`); можно повторять; источник называется по базовому имени файла |
+| `--rules FILE` | — | файл правил, YAML или JSON; можно повторять |
+| `--nest OUTER>INNER` | — | разрешить спаны типа INNER внутри OUTER; можно повторять |
+| `--tags T,...` | — | теги документа, выбирающие наборы правил |
+| `--types T,...` | — | печатать только эти типы спанов (после разрешения) |
+| `--explain` | выкл. | печатать обоснование каждого спана |
+| `--format` | `table` | `table` или `jsonl` |
+
+Плохие строки газетира — предупреждения в stderr; газетир, упавший
+целиком, неверный файл правил или плохой `--nest` останавливают команду.
+
+Строка таблицы на спан: номер документа (с 1), байтовые смещения, тип,
+текст, нормальные формы и ссылки (через `|`), флаги, оценка. С
+`--explain` после спана идут строки обоснования, затем строки `alt` для
+типов, проигравших на том же диапазоне.
+
+С каталогом морфологии, который знает «деревни», «уезда» и
+«Боровского», `place.tsv` с деревней и уездом и `place.yaml` с
+подсказками из [сценария 16](scenarios.md#16-слова-контекста-триггеры-и-теги-документа):
+
+```bash
+lexicon extract --gazetteer place.tsv --rules place.yaml "из деревни Лягушкино Боровского уезда"
+```
+```
+DOC  START  END  TYPE      SURFACE            NORMAL     REFS  FLAGS  SCORE
+1    5      38   division  деревни Лягушкино  Лягушкино  d1           8.50
+1    39     70   division  Боровского уезда   Боровский  d2           6.50
+```
+
+`--format jsonl` печатает по объекту JSON на спан: `doc`, `start`, `end`,
+`rune_start`, `rune_end`, `type`, `surface`, `normal`, `refs`, `attrs`,
+`flags`, `score`, `evidence`, `alternatives` (пустые поля опускаются).
+
+```bash
+printf 'Лягушкино\nиз Боровского уезда\n' | lexicon extract --gazetteer place.tsv --rules place.yaml --format jsonl -
+```
+```
+{"doc":1,"start":0,"end":18,"rune_start":0,"rune_end":9,"type":"division","surface":"Лягушкино","normal":["Лягушкино"],"refs":["d1"],"attrs":{"level":"village"},"score":3}
+{"doc":2,"start":5,"end":36,"rune_start":3,"rune_end":19,"type":"division","surface":"Боровского уезда","normal":["Боровский"],"refs":["d2"],"attrs":{"level":"uezd"},"score":6.5}
+```
+
+**Поведение в 0.2:** один профиль анализатора, `text` (все включённые
+виды словарей), обслуживает и документы, и псевдонимы; два файла
+`--gazetteer` с одинаковым базовым именем падают как дубликат имени
+источника.
+
+## `golden` — оценить эталонный набор
+
+*(0.2, не выпущено)* Прогоняет конвейер по эталонным примерам
+([сценарий 19](scenarios.md#19-измерить-качество-на-эталонном-наборе)) и
+печатает строгие (`P`, `R`, `F1`: точные байты и тип) и частичные (`P~`,
+`R~`, `F1~`: пересечение) оценки по типам, строгие счётчики и каждый
+пропущенный или лишний спан.
+
+| Флаг | По умолчанию | Значение |
+|---|---|---|
+| `--cases FILE` | — (обязателен) | эталонные примеры, JSON Lines |
+| `--min-precision N` | 0 | ошибка, если строгая точность типа ниже N |
+| `--min-recall N` | 0 | ошибка, если строгая полнота типа ниже N |
+| `--dicts`, `--ortho`, `--gazetteer`, `--rules`, `--nest` | | как у `extract` |
+
+```bash
+lexicon golden --gazetteer place.tsv --rules place.yaml --cases cases.jsonl --min-precision 0.9
+```
+```
+TYPE      P      R      F1     P~     R~     F1~    TP  FP  FN
+division  0.750  1.000  0.857  0.750  1.000  0.857  3   1   0
+cases: 2, failures: 1
+spurious	bare	division	«Боровский»
+golden: division: strict precision 0.750 < 0.900
+lexicon: golden: below threshold
+```
+
+Последние две строки идут в stderr, код выхода — 1: годится как проверка
+в CI.
+
+**Поведение в 0.2:** `context` примера игнорируется (в CLI нет способа
+превратить его в теги; из Go используйте `nertest.WithTags`), а пример с
+`profile`, отличным от `text`, проваливает прогон.
+
 ## История
 
 - 0.1.0 — `analyze`, `dicts list`, `dicts fetch`.
+- 0.2 (не выпущено) — `extract`, `golden`.

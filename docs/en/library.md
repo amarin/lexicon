@@ -9,6 +9,10 @@ symbol is the final word; this page groups them and states the contracts.
 - [textnorm](#textnorm) — orthography and tokens, no dictionaries
 - [lexicon](#lexicon) — dictionaries (`Registry`), `Profile`, `Analyzer`
 - [basefetch](#basefetch) — download the base dictionary
+- [gazetteer](#gazetteer) — host records compiled for matching *(0.2, unreleased)*
+- [rules](#rules) — hints, triggers, rule sets by document tags *(0.2, unreleased)*
+- [ner](#ner) — the extraction pipeline *(0.2, unreleased)*
+- [nertest](#nertest) — golden-set scoring *(0.2, unreleased)*
 - [Contracts](#contracts) — offsets, versions, concurrency, errors
 
 ## textnorm
@@ -221,6 +225,235 @@ Downloads pymorphy2-dicts-ru, compiles it, and writes `dst` and its sidecar
 network access. This package pulls gomorphy's pymorphy loader and zap;
 import it only where you fetch.
 
+## gazetteer
+
+`import "github.com/amarin/lexicon/gazetteer"` — *(0.2, unreleased)*
+
+Compiles aliases of host records into token tries and matches them against
+analyzed text. It reports every match, overlapping ones included; choosing
+between them is `ner`'s job. Imports only the root package and `textnorm`.
+
+### Entries and sources
+
+```go
+type Entry struct {
+    Alias     string            // surface text: «дер. Лягушкино», «СПб»
+    Type      string            // host entity type: "surname", "division", …
+    Ref       string            // opaque host key; aliases sharing a Ref are variants of one record
+    Canonical string            // normal form of the record; Alias when empty
+    Attrs     map[string]string // passthrough to spans
+    Flags     EntryFlag         // RequiresContext, SurfaceOnly, CaseSensitive, Blocked
+}
+type Source interface {
+    Name() string                                                // unique within a Gazetteer
+    Version(ctx context.Context) (string, error)                 // cheap; unchanged = no recompilation
+    Entries(ctx context.Context, yield func(Entry) error) error // stops at the first yield error
+}
+func NewTSVSource(name, path string) *TSVSource        // reads path on every Version/Entries call
+func NewTSVSourceData(name string, data []byte) *TSVSource // in-memory, e.g. //go:embed
+func NewSliceSource(name, version string, entries []Entry) *SliceSource
+```
+
+TSV: `type<TAB>ref<TAB>canonical<TAB>alias[<TAB>flags[<TAB>k=v;k=v]]`,
+flags comma-separated (`requires_context,surface_only,case_sensitive,blocked`,
+`ParseEntryFlags`); `#` lines are comments, `# key: value` lines (keys
+`[a-z_]`) before the first entry form the manifest (`TSVSource.Manifest()`).
+Its `Version` is the sha256 of the content. A bad line is skipped and
+returned as `*ParseErrors` after every good entry — the builder puts it in
+the report.
+
+| Flag | Effect |
+|---|---|
+| `RequiresContext` | kept only when a hint or trigger supports the match |
+| `SurfaceOnly` | no lemma key: matched by normalized form only |
+| `CaseSensitive` | kept only when every word has the alias's letter case |
+| `Blocked` | vetoes every match of the entry's type on the matched range, whatever its other flags |
+
+### Gazetteer
+
+```go
+func New(ctx context.Context, cfg Config) (*Gazetteer, error)
+type Config struct {
+    Analyzer       Analyzer                   // *lexicon.Analyzer; its Version is part of every compiled source
+    TypeProfiles   map[string]lexicon.Profile // profile per entry type
+    DefaultProfile lexicon.Profile            // for other types
+    Sources        []Source                   // compiled in order; unique non-empty names
+}
+```
+
+| Method | |
+|---|---|
+| `Snapshot() *Snapshot` | the current compiled state, lock-free; hold it for one operation |
+| `Refresh(ctx) ([]SourceReport, error)` | recompile the sources whose `Version` (or the analyzer version) changed; swap atomically |
+| `RefreshSource(ctx, name) (SourceReport, error)` | recompile one source regardless of its version; `ErrUnknownSource` |
+| `Canonical(key)`, `Expand(lemma)` | delegate to the current snapshot |
+
+`New` fails only on an invalid configuration; a failing source is in
+`Snapshot().Reports()`. Each alias is analysed (`ModeFull`) with its
+type's profile into a surface key and lemma keys — an ambiguous word
+expands into combinations, at most `MaxLemmaKeys` (8) per alias.
+`SourceReport` counts entries, aliases, lemma and surface keys, capped and
+blocked aliases, skipped empty ones, the duration and non-fatal `Errors`;
+`Err` is a fatal failure, after which the source keeps its previous data.
+
+### Snapshot and matching
+
+| Method | |
+|---|---|
+| `Match(tx *Text, out []Match) []Match` | append every alias match in `tx`; allocates only to grow `out` |
+| `Version() string` | changes when any source is recompiled or the profile configuration changes |
+| `Reports() []SourceReport` | the last report of every source, in configuration order |
+| `Canonical(key) []string` | canonical forms of the aliases whose lemma or surface key (space-joined) is `key` |
+| `Expand(lemma) []string` | lemma keys of every variant group containing `lemma` — for query expansion |
+
+`Prepare(terms)` builds a `Text` from `Analyzer.Analyze(ModeFull)` terms.
+A `Match` is content positions `[Start, End)` (words and numbers; map back
+with `Text.TermIndex`), its `Kind` (`ByLemma`, `BySurface`) and the
+`Aliases` whose key ended there. Matches do not cross sentence ends.
+Aliases and snapshots are shared and read-only.
+
+## rules
+
+`import "github.com/amarin/lexicon/rules"` — *(0.2, unreleased)*
+
+Rules as data, validated into an immutable `Book`. Imports
+`go.yaml.in/yaml/v3`.
+
+```go
+func Load(r io.Reader) (File, error)              // errors say "<input>"
+func LoadNamed(name string, r io.Reader) (File, error)
+func LoadFile(path string) (File, error)          // .yaml, .yml or .json
+func Compile(files ...File) (*Book, error)        // set names unique across files
+
+type File struct {
+    Meta map[string]string // `meta:` — source, license, version, url, generated_from
+    Sets []RuleSet         // `sets:`
+}
+type RuleSet struct {
+    Name     string    // `name:`
+    When     []string  // `when:` — active when the document has ALL these tags; empty = always
+    Hints    []Hint
+    Triggers []Trigger
+}
+```
+
+One YAML document per file (JSON is valid YAML); unknown fields are
+errors. `Load*` errors read `<file>:<line>: <message>`, `Compile` errors
+`<file>:<line>: <set>/<rule>: <message>` (`hint 0`, `trigger 1`).
+
+| Hint field | YAML | Default | |
+|---|---|---|---|
+| `Lemma` | `lemma` | — | keyword lemma or form, alternatives with `\|` |
+| `Dotted` | `dotted` | false | keyword must be followed by «.» |
+| `Type` | `type` | — | span type it supports |
+| `Dir` | `dir` | `right` | `right`, `left`, `both` |
+| `Window` | `window` | 1 | content words between keyword and span, ≤ `MaxWindow` (8) |
+| `Weight` | `weight` | 1 | added to the span's score |
+| `Absorb` | `absorb` | false | extend the span over the keyword |
+
+A `Trigger` has the same `lemma`, `dotted`, `type`, `weight`, `absorb`,
+plus `dir` (`right` or `left`), `window` as a range (`N` = 1..N,
+`"min..max"`), `shape` (`case`: `lower`/`title`/`upper`, `script`:
+`cyrillic`/`latin`) and `stop_at` (`punct` implied, `stop`, `number`,
+`latin`) restricting the words it covers, and `negative` (subtract the
+weight from overlapping gazetteer spans instead of adding it).
+
+| `Book` method | |
+|---|---|
+| `Active(tags) Active` | hints and triggers of the sets whose `When` tags are all in `tags`, in file and set order; shared, do not modify |
+| `Sets() []string` | set names in order |
+| `Version() string` | changes when any rule or meta value changes |
+
+Keywords are compared after `textnorm.NormalizeWord(textnorm.PreReform, …)`
+and without a trailing dot, whatever orthography the document uses.
+
+## ner
+
+`import "github.com/amarin/lexicon/ner"` — *(0.2, unreleased)*
+
+```go
+func New(cfg Config) (*Pipeline, error)
+type Config struct {
+    Analyzer           Analyzer                   // *lexicon.Analyzer
+    Gazetteer          Gazetteer                  // *gazetteer.Gazetteer
+    Rules              *rules.Book                // nil: no rules
+    Profiles           map[string]lexicon.Profile // Doc.Profile → analyzer profile
+    DefaultProfile     string
+    Nesting            map[string][]string        // outer type → inner types allowed inside it
+    Weights            Weights                    // DefaultWeights() when Surface, Lemma, Trigger are all 0
+    MinLemmaMatchRunes int                        // drop one-word lemma-only matches of shorter aliases; 0 → 3
+}
+func (p *Pipeline) Extract(ctx context.Context, d Doc, opts ...Option) (Result, error)
+func Explain() Option // fill Span.Evidence
+
+type Doc struct {
+    Text    string
+    Profile string   // Config.DefaultProfile when empty; unknown → ErrUnknownProfile
+    Tags    []string // select rule sets
+    Types   []string // output filter, applied after resolution
+}
+type Result struct {
+    Spans   []Span // by Start, then longer first, then Type
+    Version string // extractor, analyzer, gazetteer snapshot, rules, configuration
+}
+type Span struct {
+    Start, End         int // bytes in Doc.Text; Doc.Text[Start:End] == Surface
+    RuneStart, RuneEnd int // code points
+    Surface, Type      string
+    Normal             []string          // canonical forms; >1 when ambiguous
+    Refs               []string          // gazetteer refs; empty for a candidate
+    Attrs              map[string]string // entry attributes, conflicting keys dropped
+    Flags              SpanFlag          // Ambiguous, Predicted, Abbrev, Candidate, Nested
+    Score              float32
+    Evidence           []string          // with Explain
+    Alternatives       []Alternative     // losing types on the same range, best first
+}
+```
+
+`Extract` runs: analysis (`ModeFull`) → gazetteer matches → filters
+(`Blocked`, `CaseSensitive`, short lemma matches) → hints → triggers →
+`RequiresContext` filter → scoring → weighted interval scheduling (no
+crossing spans; nesting only for `Config.Nesting` pairs) → the
+`Doc.Types` filter. Score = (origin weight + `Types[type]`) × words +
+`LengthBonus` × (words − 1) + hint/trigger evidence − `AmbiguityPenalty` ×
+(alternatives − 1), rounded to 1e-6; `DefaultWeights()` is surface 3,
+lemma 2, trigger 1, length bonus 0.5, ambiguity penalty 0.25. An exact
+tie between types marks the span `Ambiguous` and goes to the type name.
+`New` copies the host's maps. `Extract` is linear in the document size and
+checks `ctx` between stages.
+
+## nertest
+
+`import "github.com/amarin/lexicon/nertest"` — *(0.2, unreleased)*
+
+```go
+type Case struct {
+    ID      string            `json:"id,omitempty"`      // "line<N>" when missing
+    Text    string            `json:"text"`
+    Profile string            `json:"profile,omitempty"`
+    Tags    []string          `json:"tags,omitempty"`
+    Spans   []Gold            `json:"spans"`
+    Context map[string]string `json:"context,omitempty"` // host data, ignored unless WithTags
+}
+type Gold struct {
+    Text       string `json:"text"`
+    Type       string `json:"type"`
+    Occurrence int    `json:"occurrence,omitempty"` // 1-based, default 1
+}
+func LoadCases(r io.Reader) ([]Case, error) // JSON lines; blank lines skipped; unknown fields are errors
+func LoadCasesFile(path string) ([]Case, error)
+func Run(ctx context.Context, ex Extractor, cases []Case, opts ...Option) (*Report, error)
+func WithTags(f func(Case) []string) Option // extra tags for the extraction only
+```
+
+`Extractor` is anything with `ner.Pipeline`'s `Extract`. `Report` has
+`Cases`, `Types map[string]*TypeScore` (`Strict` — exact bytes and type,
+`Partial` — overlap and type; each `Counts{TP, FP, FN}` with
+`Precision()`, `Recall()`, `F1()`) and `Failures` (strict `missed` and
+`spurious` spans). `Report.Write(w)` prints the table and failures;
+`Report.Check(minPrecision, minRecall)` lists the types whose strict
+precision or recall is below the minimum.
+
 ## Contracts
 
 - **Offsets.** Offsets refer to the input exactly as passed: byte and
@@ -231,9 +464,16 @@ import it only where you fetch.
   bump `Rules.Version` or the analyzer version; store the value with
   derived data and rebuild when it changes
   ([scenario 13](scenarios.md#13-know-when-to-reindex)).
+  `ner.Result.Version` does the same for extracted spans: it covers the
+  extractor version, `Analyzer.Version()`, the gazetteer
+  `Snapshot.Version()`, `Book.Version()` and the pipeline configuration.
 - **Concurrency.** `Registry` and `Analyzer` are safe for concurrent use.
   `Parse` never locks; `SetEnabled`, `Reload` and `Close` swap snapshots
   atomically and close old dictionaries after in-flight calls.
+  `Gazetteer`, `Snapshot`, `Book` and `Pipeline` are safe for concurrent
+  use too: `Refresh` swaps gazetteer snapshots atomically, and each
+  `Extract` pins one snapshot (only the snapshot — the analyzer and its
+  registry stay live).
 - **Files.** Replace dictionary files atomically (temporary file + rename):
   `.dat` files are memory-mapped.
 - **Errors, no logging.** Packages return errors and expose state

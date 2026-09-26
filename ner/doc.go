@@ -10,4 +10,8 @@
 // (and the dictionary registry behind it) is live, and the snapshot may have
 // been compiled with an older analyzer until the host calls
 // Gazetteer.Refresh.
+//
+// What each feature is for, with runnable examples:
+// https://github.com/amarin/lexicon/blob/main/docs/en/scenarios.md#15-find-entities-with-dictionaries
+// (Russian: docs/ru/scenarios.md).
 package ner

@@ -8,4 +8,8 @@
 // immutable Snapshot that Gazetteer swaps atomically; readers never lock.
 // Matching reports every alias match, overlapping ones included: choosing
 // between them is the job of package ner.
+//
+// What each feature is for, with runnable examples:
+// https://github.com/amarin/lexicon/blob/main/docs/en/scenarios.md#15-find-entities-with-dictionaries
+// (Russian: docs/ru/scenarios.md).
 package gazetteer
