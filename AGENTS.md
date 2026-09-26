@@ -71,7 +71,8 @@ Project instructions for AI agents (Codex, Claude, LGTM).
 - `go test ./... -count=1`; `go test -race ./... -count=1` (includes `go test ./examples/`,
   which builds and runs every example with an `// Output:` block; `-short` skips it).
 - `go test ./textnorm/ -run '^$' -fuzz FuzzTokenize -fuzztime 30s`,
-  `go test ./ner/ -run '^$' -fuzz FuzzExtractOffsets -fuzztime 30s` — one fuzz target per run.
+  `go test ./ner/ -run '^$' -fuzz FuzzExtractOffsets -fuzztime 30s -fuzzminimizetime 5s` —
+  one fuzz target per run (for `ner`, the default 60 s input minimization would stall a short run).
 - `go test ./... -run '^$' -bench . -benchmem` — benchmarks.
 - `LEXICON_BASE_DAT=/path/base.opencorpora.dat go test -tags integration ./... -count=1` —
   tests with the real base dictionary (`LEXICON_FETCH=1` also exercises the download).

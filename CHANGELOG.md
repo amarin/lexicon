@@ -25,13 +25,17 @@ Notable changes of the project are recorded in this file (format inspired by
 - `ner`: the extraction pipeline — `Doc`, `Span`, `SpanFlag`, `Result`,
   `Config` (weights, `Nesting`), `New`/`Extract`, `Explain`; filters
   (`Blocked`, `RequiresContext`, `CaseSensitive`, `MinLemmaMatchRunes`);
-  hints and triggers with context windows, absorption and boosts, gated
-  by negative triggers; scoring (surface > lemma > trigger, length, type
-  weight, evidence, ambiguity penalty, ties broken by type name); weighted
-  interval scheduling over overlapping spans with configurable nesting;
-  same-range losers of other types kept as `Span.Alternatives`; a `Types`
-  filter applied after resolution; one pinned dictionary/gazetteer snapshot
-  per `Extract` call, safe for concurrent use.
+  hints and triggers with context windows, absorption and boosts;
+  negative triggers subtracting weight from overlapping gazetteer
+  candidates; a weighted-sum score (origin and type weight per word,
+  length bonus, evidence, ambiguity penalty) with exact ties broken by
+  type name; weighted interval scheduling over overlapping spans with
+  configurable nesting; same-range losers of other types kept as
+  `Span.Alternatives`; a `Types` filter applied after resolution; one
+  pinned gazetteer snapshot per `Extract` call (the analyzer and its
+  registry stay live), safe for concurrent use; `Result.Version` covering
+  the extractor version, analyzer, snapshot (including the gazetteer's
+  profiles), rules and pipeline configuration; linear in document size.
 - `nertest`: a golden-JSONL test harness (`Case`, `Run`) reporting strict
   and partial precision/recall/F1 per entity type; `Case.Context` for
   host document metadata plus `WithTags` to derive rule-set tags from it.
