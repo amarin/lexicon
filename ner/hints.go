@@ -7,14 +7,31 @@ import (
 
 // applyHints boosts candidates of each hint's type near its keyword,
 // gives them context and optionally absorbs the adjacent keyword.
+//
+// Only candidates starting or ending within the window of a keyword can
+// qualify, so each keyword looks at O(window) index buckets. The effects on
+// one candidate do not depend on the other candidates, so visiting them in
+// bucket order instead of creation order changes nothing.
 func (s *state) applyHints(hs []*rules.HintRule) {
+	if len(hs) == 0 {
+		return
+	}
+	idx := s.index()
+	var near []*candidate
 	for _, h := range hs {
 		for k := 0; k < s.tx.Len(); k++ {
 			kw := s.term(k)
 			if !h.Keyword(kw) {
 				continue
 			}
-			for _, c := range s.cands {
+			near = near[:0]
+			if h.Dir == rules.Right || h.Dir == rules.Both {
+				near = idx.startingIn(k+1, k+h.Window, near)
+			}
+			if h.Dir == rules.Left || h.Dir == rules.Both {
+				near = idx.endingIn(k+1-h.Window, k, near)
+			}
+			for _, c := range near {
 				if c.removed || c.typ != h.Type || !within(s.tx, k, c, h.Dir, h.Window) {
 					continue
 				}
@@ -22,7 +39,9 @@ func (s *state) applyHints(hs []*rules.HintRule) {
 				c.context = true
 				s.note(c, "hint «%s» → %s %+g", kw.Token.Raw, h.Type, float64(h.Weight))
 				if h.Absorb {
+					start, end := c.start, c.end
 					s.absorb(c, k)
+					idx.move(c, start, end)
 				}
 			}
 		}

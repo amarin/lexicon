@@ -54,7 +54,11 @@ func (r *resolver) inner(c *candidate) *selection {
 	}
 	var in []*candidate
 	if allowed := r.nesting[c.typ]; len(allowed) > 0 {
-		for _, x := range r.all {
+		// all is sorted by end: a candidate inside c ends in (c.start, c.end],
+		// so only that slice of all is scanned, in all's order.
+		lo := sort.Search(len(r.all), func(i int) bool { return r.all[i].end > c.start })
+		hi := sort.Search(len(r.all), func(i int) bool { return r.all[i].end > c.end })
+		for _, x := range r.all[lo:hi] {
 			if x != c && allowed[x.typ] && x.start >= c.start && x.end <= c.end && x.words() < c.words() {
 				in = append(in, x)
 			}

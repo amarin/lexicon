@@ -36,13 +36,24 @@ func (p *Pipeline) Extract(ctx context.Context, d Doc, opts ...Option) (Result, 
 		return Result{}, err
 	}
 	st := &state{p: p, tx: gazetteer.Prepare(terms), terms: terms, explain: o.explain}
-	st.fromMatches(snap.Match(st.tx, nil))
-	st.filterEarly()
-	st.applyHints(active.Hints)
-	st.applyTriggers(active.Triggers)
-	st.filterContext()
-	st.scoreAll()
+	stages := []func(){
+		func() { st.fromMatches(snap.Match(st.tx, nil)) },
+		st.filterEarly,
+		func() { st.applyHints(active.Hints) },
+		func() { st.applyTriggers(active.Triggers) },
+		st.filterContext,
+		st.scoreAll,
+	}
+	for _, stage := range stages {
+		stage()
+		if err := ctx.Err(); err != nil {
+			return Result{}, err
+		}
+	}
 	chosen, nested := st.resolve()
+	if err := ctx.Err(); err != nil {
+		return Result{}, err
+	}
 	res.Spans, _ = st.output(d.Text, chosen, nested, d.Types)
 	return res, nil
 }

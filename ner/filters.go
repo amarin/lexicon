@@ -30,7 +30,7 @@ func (s *state) filterEarly() {
 			// A blocked alias means "these words are not of this type": remember
 			// the range so a later trigger does not propose a fresh candidate of
 			// the same, vetoed type over it.
-			s.blocked = append(s.blocked, rangeKey{c.start, c.end, c.typ})
+			s.blocked = append(s.blocked, c)
 		}
 		if blocked || len(kept) == 0 {
 			c.removed = true
@@ -41,10 +41,10 @@ func (s *state) filterEarly() {
 }
 
 // blockedOverlap reports whether [a, b) overlaps a filterEarly-vetoed range
-// of typ.
-func (s *state) blockedOverlap(typ string, a, b int) bool {
-	for _, rk := range s.blocked {
-		if rk.typ == typ && rk.start < b && a < rk.end {
+// of typ; blocked indexes state.blocked.
+func blockedOverlap(blocked *posIndex, typ string, a, b int) bool {
+	for _, c := range blocked.overlapping(a, b, nil) {
+		if c.typ == typ {
 			return true
 		}
 	}

@@ -15,10 +15,21 @@ type state struct {
 	terms   []lexicon.Term
 	explain bool
 	cands   []*candidate
-	blocked []rangeKey // ranges filterEarly vetoed for their type (gazetteer.Blocked)
+	idx     *posIndex    // gazetteer candidates by position, built by index()
+	blocked []*candidate // candidates filterEarly vetoed for their type (gazetteer.Blocked); their ranges never change
 }
 
 func (s *state) term(pos int) *lexicon.Term { return &s.terms[s.tx.TermIndex(pos)] }
+
+// index returns the position index of the gazetteer candidates, building it
+// on first use. It must be built after filterEarly and before any trigger
+// candidate is added; applyHints keeps it current when it absorbs keywords.
+func (s *state) index() *posIndex {
+	if s.idx == nil {
+		s.idx = newPosIndex(s.tx.Len(), s.cands)
+	}
+	return s.idx
+}
 
 // note appends evidence when Explain is on.
 func (s *state) note(c *candidate, format string, args ...any) {

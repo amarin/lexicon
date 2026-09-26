@@ -4,7 +4,17 @@ import "github.com/amarin/lexicon/rules"
 
 // applyTriggers proposes candidates, or boosts/penalizes overlapping
 // gazetteer candidates of the trigger's type (decision D5).
+//
+// Gazetteer candidates overlapping the covered words are looked up in a
+// position index. Candidates proposed here are never consulted by later
+// triggers (overlap checks skip originTrigger), so they are not indexed.
 func (s *state) applyTriggers(ts []*rules.TriggerRule) {
+	if len(ts) == 0 {
+		return
+	}
+	idx := s.index()
+	blocked := newPosIndex(s.tx.Len(), s.blocked)
+	var near []*candidate
 	for _, tr := range ts {
 		for k := 0; k < s.tx.Len(); k++ {
 			kw := s.term(k)
@@ -17,7 +27,8 @@ func (s *state) applyTriggers(ts []*rules.TriggerRule) {
 			}
 			w := float64(tr.Weight)
 			boosted := false
-			for _, c := range s.cands {
+			near = idx.overlapping(a, b, near[:0])
+			for _, c := range near {
 				if c.removed || c.typ != tr.Type || c.origin == originTrigger || c.end <= a || c.start >= b {
 					continue
 				}
@@ -31,7 +42,7 @@ func (s *state) applyTriggers(ts []*rules.TriggerRule) {
 				boosted = true
 				s.note(c, "trigger «%s» → %s %+g", kw.Token.Raw, tr.Type, w)
 			}
-			if tr.Negative || boosted || s.blockedOverlap(tr.Type, a, b) {
+			if tr.Negative || boosted || blockedOverlap(blocked, tr.Type, a, b) {
 				continue
 			}
 			nc := &candidate{

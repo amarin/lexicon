@@ -27,3 +27,22 @@ func BenchmarkExtract1KB(b *testing.B) {
 		}
 	}
 }
+
+// BenchmarkExtract64KBDense: an entity-dense 64 KB document; Extract must
+// stay close to linear in the document size.
+func BenchmarkExtract64KBDense(b *testing.B) {
+	p, _ := newPipeline(b, testEntries(), placesRules)
+	const chunk = "деревня Лягушкино Иван Петров "
+	doc := Doc{Text: strings.Repeat(chunk, 64*1024/len(chunk)+1)}
+	if _, err := p.Extract(context.Background(), doc); err != nil {
+		b.Fatal(err)
+	}
+	b.SetBytes(int64(len(doc.Text)))
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if _, err := p.Extract(context.Background(), doc); err != nil {
+			b.Fatal(err)
+		}
+	}
+}

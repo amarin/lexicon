@@ -50,11 +50,17 @@ func (s *state) resolve() ([]*candidate, map[*candidate]bool) {
 // attachAlternatives keeps every live loser on a winner's exact range with
 // another type as an alternative of the winner (D14) and flags ties (D7).
 // Two candidates on one range never both win: nesting needs a strictly
-// shorter inner candidate.
+// shorter inner candidate. Live candidates are bucketed by range, keeping
+// their live order within a bucket.
 func (s *state) attachAlternatives(chosen, live []*candidate) {
+	byRange := make(map[[2]int][]*candidate, len(live))
+	for _, o := range live {
+		k := [2]int{o.start, o.end}
+		byRange[k] = append(byRange[k], o)
+	}
 	for _, c := range chosen {
-		for _, o := range live {
-			if o == c || o.typ == c.typ || o.start != c.start || o.end != c.end {
+		for _, o := range byRange[[2]int{c.start, c.end}] {
+			if o == c || o.typ == c.typ {
 				continue
 			}
 			c.alts = append(c.alts, o)
