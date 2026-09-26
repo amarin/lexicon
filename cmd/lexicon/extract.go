@@ -49,7 +49,9 @@ func runExtract(ctx context.Context, args []string, stdin io.Reader, stdout, std
 		sc.Buffer(make([]byte, 64*1024), 16*1024*1024)
 
 		for sc.Scan() {
-			if line := strings.TrimSpace(sc.Text()); line != "" {
+			// The line is the document exactly as read: span offsets refer
+			// to it. Blank lines are skipped, nothing is trimmed.
+			if line := sc.Text(); strings.TrimSpace(line) != "" {
 				texts = append(texts, line)
 			}
 		}

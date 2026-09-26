@@ -74,6 +74,34 @@ func TestExtractTableFromStdin(t *testing.T) {
 	}
 }
 
+// TestExtractStdinOffsets: a stdin line is the document exactly as read —
+// leading spaces are kept and offsets match the same text passed as an
+// argument; blank lines are skipped.
+func TestExtractStdinOffsets(t *testing.T) {
+	useFakeDictionaries(t)
+	args := []string{"extract", "--dicts", "unused", "--gazetteer", testTSV, "--format", "jsonl"}
+	text := "  жил Иван Петров"
+
+	code, fromArg, errs := runCmd(run, "", append(args, text)...)
+	if code != 0 {
+		t.Fatalf("arg: exit %d: %s", code, errs)
+	}
+	code, fromStdin, errs := runCmd(run, "\n   \n"+text+"\n", append(args, "-")...)
+	if code != 0 {
+		t.Fatalf("stdin: exit %d: %s", code, errs)
+	}
+	if fromArg == "" || fromStdin != fromArg {
+		t.Fatalf("stdin output differs from argument output:\n got %s\nwant %s", fromStdin, fromArg)
+	}
+	var s spanJSON
+	if err := json.Unmarshal([]byte(strings.SplitN(fromStdin, "\n", 2)[0]), &s); err != nil {
+		t.Fatal(err)
+	}
+	if text[s.Start:s.End] != s.Surface {
+		t.Fatalf("text[%d:%d] = %q, surface %q", s.Start, s.End, text[s.Start:s.End], s.Surface)
+	}
+}
+
 func TestExtractUsageErrors(t *testing.T) {
 	useFakeDictionaries(t)
 	if code, _, _ := runCmd(run, "", "extract", "--dicts", "x", "--gazetteer", testTSV); code != 2 {
