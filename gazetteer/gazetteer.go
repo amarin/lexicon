@@ -2,11 +2,16 @@ package gazetteer
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"slices"
 	"sync"
 	"sync/atomic"
+
+	"github.com/amarin/lexicon"
 )
 
 // Gazetteer owns compiled sources and publishes them as immutable snapshots.
@@ -15,6 +20,7 @@ import (
 type Gazetteer struct {
 	b       builder
 	sources []Source
+	cfgHash string // profile configuration, part of every Snapshot.Version
 	mu      sync.Mutex
 	cur     atomic.Pointer[Snapshot]
 }
@@ -33,15 +39,25 @@ func New(ctx context.Context, cfg Config) (*Gazetteer, error) {
 		}
 		seen[n] = true
 	}
+	// encoding/json writes map keys sorted, so the encoding is deterministic.
+	data, err := json.Marshal(struct {
+		T map[string]lexicon.Profile
+		D lexicon.Profile
+	}{cfg.TypeProfiles, cfg.DefaultProfile})
+	if err != nil {
+		return nil, fmt.Errorf("gazetteer: %w", err)
+	}
+	sum := sha256.Sum256(data)
 	g := &Gazetteer{
 		b:       builder{analyzer: cfg.Analyzer, typeProfiles: cfg.TypeProfiles, defaultProfile: cfg.DefaultProfile},
 		sources: slices.Clone(cfg.Sources),
+		cfgHash: hex.EncodeToString(sum[:8]),
 	}
 	empty := &Snapshot{sources: make([]*compiledSource, len(g.sources))}
 	for i, s := range g.sources {
 		empty.sources[i] = &compiledSource{name: s.Name(), report: SourceReport{Source: s.Name()}}
 	}
-	empty.version = snapshotVersion(empty.sources)
+	empty.version = snapshotVersion(g.cfgHash, empty.sources)
 	g.cur.Store(empty)
 	if _, err := g.refresh(ctx, "", false); err != nil {
 		return nil, err
@@ -109,7 +125,7 @@ func (g *Gazetteer) refresh(ctx context.Context, only string, force bool) ([]Sou
 		return nil, fmt.Errorf("%w: %q", ErrUnknownSource, only)
 	}
 	if len(reps) > 0 {
-		next.version = snapshotVersion(next.sources)
+		next.version = snapshotVersion(g.cfgHash, next.sources)
 		g.cur.Store(next)
 	}
 	return reps, nil

@@ -7,9 +7,16 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/amarin/lexicon"
 	"github.com/amarin/lexicon/gazetteer"
 	"github.com/amarin/lexicon/rules"
 )
+
+// extractorVersion identifies the extraction algorithm; it is part of
+// Result.Version. Bump it on any change of extraction behaviour (candidate
+// generation, filters, rule application, scoring, resolution, output flags)
+// so hosts invalidate spans stored from an older build.
+const extractorVersion = "ner-1"
 
 // Pipeline extracts spans; it is safe for concurrent use.
 type Pipeline struct {
@@ -56,11 +63,14 @@ func New(cfg Config) (*Pipeline, error) {
 		}
 		p.nesting[outer] = m
 	}
+	// encoding/json writes map keys sorted, so the encoding is deterministic.
 	data, err := json.Marshal(struct {
 		W Weights
 		M int
 		N map[string][]string
-	}{p.weights, p.minRunes, cfg.Nesting})
+		P map[string]lexicon.Profile
+		D string
+	}{p.weights, p.minRunes, cfg.Nesting, cfg.Profiles, cfg.DefaultProfile})
 	if err != nil {
 		return nil, fmt.Errorf("ner: %w", err)
 	}
@@ -72,6 +82,6 @@ func New(cfg Config) (*Pipeline, error) {
 // version combines every component version for Result.Version.
 func (p *Pipeline) version(snap *gazetteer.Snapshot) string {
 	h := sha256.New()
-	fmt.Fprintf(h, "%s\x00%s\x00%s\x00%s", p.cfg.Analyzer.Version(), snap.Version(), p.book.Version(), p.cfgHash)
+	fmt.Fprintf(h, "%s\x00%s\x00%s\x00%s\x00%s", extractorVersion, p.cfg.Analyzer.Version(), snap.Version(), p.book.Version(), p.cfgHash)
 	return hex.EncodeToString(h.Sum(nil))
 }

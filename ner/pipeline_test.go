@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/amarin/lexicon"
 	"github.com/amarin/lexicon/internal/fakedict"
 )
 
@@ -53,5 +54,25 @@ func TestExtractVersionAndProfile(t *testing.T) {
 	cancel()
 	if _, err := p.Extract(ctx, Doc{Text: "Иван"}); !errors.Is(err, context.Canceled) {
 		t.Fatalf("cancelled context: %v", err)
+	}
+}
+
+// Result.Version covers the document profiles: another dictionary set for
+// a profile changes the output, so it must change the version.
+func TestExtractVersionCoversProfiles(t *testing.T) {
+	p1, _ := newPipeline(t, testEntries(), placesRules)
+	p2, _ := newPipeline(t, testEntries(), placesRules, func(c *Config) {
+		c.Profiles = fakedict.Profiles()
+		name := c.Profiles["name"]
+		name.Kinds = []lexicon.Kind{lexicon.KindBase}
+		c.Profiles["name"] = name
+	})
+	v1, v2 := extract(t, p1, Doc{}).Version, extract(t, p2, Doc{}).Version
+	if v1 == v2 {
+		t.Fatal("changing a profile's kinds must change Result.Version")
+	}
+	p3, _ := newPipeline(t, testEntries(), placesRules)
+	if extract(t, p3, Doc{}).Version != v1 {
+		t.Fatal("identical configuration must give the same version")
 	}
 }

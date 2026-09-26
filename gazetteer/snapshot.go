@@ -81,7 +81,8 @@ func (s *Snapshot) unionSorted(get func(*groups) []string) []string {
 }
 
 // Version identifies the compiled content: it changes when any source is
-// recompiled from a different version or with a different analyzer.
+// recompiled from a different version or with a different analyzer, and it
+// covers the profile configuration (Config.TypeProfiles, DefaultProfile).
 func (s *Snapshot) Version() string { return s.version }
 
 // Reports returns the last report of every source, in configuration order.
@@ -93,8 +94,11 @@ func (s *Snapshot) Reports() []SourceReport {
 	return out
 }
 
-func snapshotVersion(srcs []*compiledSource) string {
+// snapshotVersion hashes cfgHash (the builder's profile configuration) and
+// the name, version and analyzer version of every built source.
+func snapshotVersion(cfgHash string, srcs []*compiledSource) string {
 	h := sha256.New()
+	fmt.Fprintf(h, "%s\n", cfgHash)
 	for _, s := range srcs {
 		if s.built {
 			fmt.Fprintf(h, "%s\x00%s\x00%s\n", s.name, s.version, s.analyzerVersion)

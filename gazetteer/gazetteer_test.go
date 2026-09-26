@@ -129,3 +129,30 @@ func TestGazetteerConcurrentReadersAndRefresh(t *testing.T) {
 	close(stop)
 	wg.Wait()
 }
+
+// Snapshot.Version covers the profile configuration: aliases analyzed with
+// other profiles compile to other keys.
+func TestSnapshotVersionCoversProfiles(t *testing.T) {
+	ctx := context.Background()
+	src := NewSliceSource("s", "1", []Entry{{Alias: "Иван", Type: "given_name"}})
+	build := func(tp map[string]lexicon.Profile, def lexicon.Profile) string {
+		t.Helper()
+		g, err := New(ctx, Config{Analyzer: stubAnalyzer{}, TypeProfiles: tp, DefaultProfile: def, Sources: []Source{src}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return g.Snapshot().Version()
+	}
+	names := lexicon.Profile{Name: "name", Kinds: []lexicon.Kind{lexicon.KindBase}}
+	base := build(map[string]lexicon.Profile{"given_name": names}, lexicon.Profile{Name: "text"})
+	if again := build(map[string]lexicon.Profile{"given_name": names}, lexicon.Profile{Name: "text"}); again != base {
+		t.Fatal("identical configuration must give the same version")
+	}
+	names.Kinds = []lexicon.Kind{lexicon.KindBase, "given"}
+	if build(map[string]lexicon.Profile{"given_name": names}, lexicon.Profile{Name: "text"}) == base {
+		t.Fatal("changing TypeProfiles must change Snapshot.Version")
+	}
+	if build(map[string]lexicon.Profile{"given_name": {Name: "name", Kinds: []lexicon.Kind{lexicon.KindBase}}}, lexicon.Profile{Name: "other"}) == base {
+		t.Fatal("changing DefaultProfile must change Snapshot.Version")
+	}
+}
