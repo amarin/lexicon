@@ -38,6 +38,8 @@ func (p *Pipeline) Extract(ctx context.Context, d Doc, opts ...Option) (Result, 
 	st.fromMatches(snap.Match(st.tx, nil))
 	st.filterEarly()
 	st.filterContext()
-	res.Spans, _ = st.output(d.Text, st.live(), nil, d.Types)
+	st.scoreAll()
+	chosen, nested := st.resolve()
+	res.Spans, _ = st.output(d.Text, chosen, nested, d.Types)
 	return res, nil
 }

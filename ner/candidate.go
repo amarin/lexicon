@@ -19,6 +19,7 @@ type candidate struct {
 	evidence   []string
 	removed    bool
 	score      float64
+	alts       []*candidate // other readings of this range (D14): resolution losers, v0.3 relabel sources
 }
 
 func (c *candidate) words() int { return c.end - c.start }

@@ -1,8 +1,10 @@
 package ner
 
 import (
+	"cmp"
 	"slices"
 	"sort"
+	"strings"
 
 	"github.com/amarin/lexicon"
 )
@@ -14,13 +16,14 @@ func (s *state) span(text string, c *candidate) Span {
 	sp := Span{
 		Start: t0.Start, End: t1.End,
 		RuneStart: t0.RuneStart, RuneEnd: t1.RuneEnd,
-		Surface: text[t0.Start:t1.End],
-		Type:    c.typ,
-		Normal:  c.normalForms(),
-		Refs:    c.refs(),
-		Attrs:   c.attrs(),
-		Flags:   c.flags,
-		Score:   float32(c.score),
+		Surface:      text[t0.Start:t1.End],
+		Type:         c.typ,
+		Normal:       c.normalForms(),
+		Refs:         c.refs(),
+		Attrs:        c.attrs(),
+		Flags:        c.flags,
+		Score:        float32(c.score),
+		Alternatives: s.alternatives(c),
 	}
 	if s.explain {
 		sp.Evidence = c.evidence
@@ -101,4 +104,30 @@ func onlyPredicted(t *lexicon.Term) bool {
 		known++
 	}
 	return known > 0
+}
+
+// alternatives converts c.alts, best first: score desc, type asc, then
+// attachment order (decision D14).
+func (s *state) alternatives(c *candidate) []Alternative {
+	if len(c.alts) == 0 {
+		return nil
+	}
+	alts := slices.Clone(c.alts)
+	slices.SortStableFunc(alts, func(a, b *candidate) int {
+		if a.score != b.score {
+			return cmp.Compare(b.score, a.score)
+		}
+		return strings.Compare(a.typ, b.typ)
+	})
+	out := make([]Alternative, len(alts))
+	for i, a := range alts {
+		out[i] = Alternative{
+			Type: a.typ, Refs: a.refs(), Normal: a.normalForms(), Attrs: a.attrs(),
+			Score: float32(a.score),
+		}
+		if s.explain {
+			out[i].Evidence = a.evidence
+		}
+	}
+	return out
 }

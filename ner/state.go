@@ -26,16 +26,6 @@ func (s *state) note(c *candidate, format string, args ...any) {
 	}
 }
 
-func (s *state) live() []*candidate {
-	var out []*candidate
-	for _, c := range s.cands {
-		if !c.removed {
-			out = append(out, c)
-		}
-	}
-	return out
-}
-
 // lemmaNormals returns the lemma sequences of positions [a, b), capped at
 // gazetteer.MaxLemmaKeys (decision D13).
 func (s *state) lemmaNormals(a, b int) []string {
