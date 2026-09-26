@@ -26,6 +26,7 @@ func (p *Pipeline) Extract(ctx context.Context, d Doc, opts ...Option) (Result, 
 		return Result{}, fmt.Errorf("%w: %q", ErrUnknownProfile, name)
 	}
 	snap := p.cfg.Gazetteer.Snapshot()
+	active := p.book.Active(d.Tags)
 	res := Result{Version: p.version(snap)}
 	if d.Text == "" {
 		return res, nil
@@ -37,6 +38,7 @@ func (p *Pipeline) Extract(ctx context.Context, d Doc, opts ...Option) (Result, 
 	st := &state{p: p, tx: gazetteer.Prepare(terms), terms: terms, explain: o.explain}
 	st.fromMatches(snap.Match(st.tx, nil))
 	st.filterEarly()
+	st.applyHints(active.Hints)
 	st.filterContext()
 	st.scoreAll()
 	chosen, nested := st.resolve()
