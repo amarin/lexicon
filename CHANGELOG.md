@@ -5,6 +5,20 @@ Notable changes of the project are recorded in this file (format inspired by
 
 ## [Unreleased]
 
+### Documentation
+
+- Usage scenarios — what each feature is for, since which version, with
+  per-feature history and reindex marks — plus installation, CLI and
+  library reference pages, in English (`docs/en/`) and Russian
+  (`docs/ru/`).
+- Runnable examples in `examples/` (all but `base` need no download; their
+  output is checked by `go test ./examples/`) and godoc `Example*`
+  functions for `textnorm` and `lexicon`.
+- `docs/todo.md`: roadmap, open questions carried over from v0.1,
+  follow-ups.
+- README marks every feature with the version it appears in and separates
+  released from planned.
+
 ## [0.1.0] - 2026-09-25
 
 ### Added
