@@ -16,6 +16,10 @@ const (
 	// CaseSensitive keeps a match only when every word has the alias's letter case.
 	CaseSensitive
 	// Blocked vetoes every match of the entry's type on the matched range.
+	// The veto applies whatever the entry's other flags say: a blocked
+	// CaseSensitive entry vetoes regardless of letter case, and a blocked
+	// one-word lemma match vetoes even when the alias is shorter than
+	// ner's MinLemmaMatchRunes.
 	Blocked
 )
 

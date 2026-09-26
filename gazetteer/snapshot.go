@@ -59,7 +59,8 @@ func (s *Snapshot) Canonical(key string) []string {
 
 // Expand returns the sorted lemma keys of every variant group (aliases of
 // one source sharing a Ref) that contains the lemma key lemma, or nil.
-// Search uses it to expand queries; NER uses the same groups via Canonical.
+// Search uses it to expand queries. NER does not use the groups: a span's
+// normal forms are the Canonical fields of its matched entries.
 func (s *Snapshot) Expand(lemma string) []string {
 	return s.unionSorted(func(g *groups) []string { return g.expand(lemma) })
 }

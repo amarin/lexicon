@@ -72,6 +72,10 @@ func (g *Gazetteer) Snapshot() *Snapshot { return g.cur.Load() }
 
 // Refresh asks every source for its version and recompiles those whose
 // version (or the analyzer version) changed. It returns their reports.
+// A source whose Version fails keeps its compiled data; the failure is in
+// its report, not in the returned error. When ctx is cancelled mid-call,
+// Refresh returns ctx's error and publishes nothing: sources already
+// rebuilt in this call are discarded and rebuilt again next time.
 func (g *Gazetteer) Refresh(ctx context.Context) ([]SourceReport, error) {
 	return g.refresh(ctx, "", false)
 }

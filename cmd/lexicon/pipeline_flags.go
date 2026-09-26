@@ -51,6 +51,11 @@ func (f *pipelineFlags) register(fs *flag.FlagSet) {
 }
 
 // build assembles a pipeline; non-fatal gazetteer problems go to warn.
+// It configures one analyzer profile, "text", for documents and aliases
+// alike, so a document naming another profile fails with
+// ner.ErrUnknownProfile. A gazetteer source is named after its file's
+// basename without extension; two --gazetteer files with the same basename
+// fail as a duplicate source name.
 func (f *pipelineFlags) build(ctx context.Context, warn io.Writer) (*ner.Pipeline, func() error, error) {
 	ortho, err := parseRules(f.ortho)
 	if err != nil {

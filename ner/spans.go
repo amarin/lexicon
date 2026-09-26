@@ -50,7 +50,9 @@ func (s *state) span(text string, c *candidate) Span {
 }
 
 // output orders spans (Start asc, End desc, Type), applies the Types filter
-// and returns the index of every kept candidate in the result.
+// and returns the index of every kept candidate in the result. Extract
+// ignores the index map for now; it is reserved for v0.3 facts, which
+// refer to spans by their position in Result.Spans.
 func (s *state) output(text string, chosen []*candidate, nested map[*candidate]bool, types []string) ([]Span, map[*candidate]int) {
 	all := make([]Span, len(chosen))
 	for i, c := range chosen {

@@ -2,7 +2,10 @@ package rules
 
 // Hint is a keyword («ул.», «деревня», «уезда») that boosts spans of Type
 // within Window content words in Dir, satisfies their RequiresContext and,
-// with Absorb, extends an adjacent span over the keyword.
+// with Absorb, extends an adjacent span over the keyword. The window is
+// measured from the keyword to the span's current edge, so after one hint
+// absorbed a keyword, a later hint measures from the absorbed edge: results
+// may depend on the order of hints. Hints have no shape.
 type Hint struct {
 	Lemma  string    `yaml:"lemma"`            // lemma or form; alternatives with "|"
 	Dotted bool      `yaml:"dotted,omitempty"` // keyword must be followed by '.'

@@ -14,7 +14,8 @@ import (
 // golden JSONL cases. Case.Context is ignored (nertest.Run is called
 // without options); a check below the thresholds is a plain error (exit 1).
 // A pipeline/registry Close error is joined into the result so it is never
-// silently dropped.
+// silently dropped. Only the "text" profile exists (see pipelineFlags.build):
+// a case with "profile": "name" aborts the run with ner.ErrUnknownProfile.
 func runGolden(ctx context.Context, args []string, _ io.Reader, stdout, stderr io.Writer) (err error) {
 	fs := flag.NewFlagSet("golden", flag.ContinueOnError)
 	fs.SetOutput(stderr)

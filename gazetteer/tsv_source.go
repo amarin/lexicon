@@ -21,7 +21,8 @@ import (
 //
 // Lines starting with '#' are comments; "# key: value" lines before the
 // first entry form the provenance manifest (source, license, version, url,
-// generated_from). Bad lines are skipped and returned as *ParseErrors after
+// generated_from). Manifest keys consist of [a-z_] only; a comment line
+// with any other key is a plain comment. Bad lines are skipped and returned as *ParseErrors after
 // all good entries were yielded. Version is the sha256 of the content.
 type TSVSource struct {
 	name, path string
