@@ -36,6 +36,8 @@ func (p *Pipeline) Extract(ctx context.Context, d Doc, opts ...Option) (Result, 
 	}
 	st := &state{p: p, tx: gazetteer.Prepare(terms), terms: terms, explain: o.explain}
 	st.fromMatches(snap.Match(st.tx, nil))
+	st.filterEarly()
+	st.filterContext()
 	res.Spans, _ = st.output(d.Text, st.live(), nil, d.Types)
 	return res, nil
 }
