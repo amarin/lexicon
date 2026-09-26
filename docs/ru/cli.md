@@ -128,14 +128,15 @@ lexicon analyze --mode full --profile 'name:base[Name|Surn|Patr]' "У Ивана
 
 *(0.2, не выпущено)* Запускает конвейер NER
 ([сценарии 15–20](scenarios.md#15-найти-сущности-по-словарям)) по каждому
-аргументу TEXT или по stdin при `-` (документ на строку, пустые строки
-пропускаются).
+аргументу TEXT или по stdin при `-` (документ на строку, ровно в том виде,
+как прочитан, так что смещения отсчитываются от начала строки; пустые
+строки пропускаются).
 
 | Флаг | По умолчанию | Значение |
 |---|---|---|
 | `--dicts` | см. выше | словари морфологии, как у `analyze` |
 | `--ortho` | `modern` | правила орфографии: `modern`, `prereform` |
-| `--gazetteer FILE` | — | TSV газетира (`type<TAB>ref<TAB>canonical<TAB>alias[<TAB>flags[<TAB>k=v;…]]`); можно повторять; источник называется по базовому имени файла |
+| `--gazetteer FILE` | — | TSV газетира (`type<TAB>ref<TAB>canonical<TAB>alias[<TAB>flags[<TAB>k=v;…]]`); можно повторять; источник называется по базовому имени файла без расширения |
 | `--rules FILE` | — | файл правил, YAML или JSON; можно повторять |
 | `--nest OUTER>INNER` | — | разрешить спаны типа INNER внутри OUTER; можно повторять |
 | `--tags T,...` | — | теги документа, выбирающие наборы правил |
@@ -151,18 +152,38 @@ lexicon analyze --mode full --profile 'name:base[Name|Surn|Patr]' "У Ивана
 `--explain` после спана идут строки обоснования, затем строки `alt` для
 типов, проигравших на том же диапазоне.
 
-С каталогом морфологии, который знает «деревни», «уезда» и
-«Боровского», `place.tsv` с деревней и уездом и `place.yaml` с
-подсказками из [сценария 16](scenarios.md#16-слова-контекста-триггеры-и-теги-документа):
+С базовым словарём OpenCorpora, таким `place.tsv`
+
+```
+division	d1	Лягушкино	Лягушкино		level=village
+division	d2	Боровский	Боровский		level=uezd
+```
+
+и таким `place.yaml` ([сценарий 16](scenarios.md#16-слова-контекста-триггеры-и-теги-документа)):
+
+```yaml
+sets:
+  - name: places
+    hints:
+      - {lemma: деревня, type: division, window: 1, weight: 2, absorb: true}
+      - {lemma: уезд, type: division, dir: left, window: 1, weight: 2, absorb: true}
+    triggers:
+      - {lemma: село, type: division, shape: {case: title, script: cyrillic}, absorb: true}
+```
 
 ```bash
-lexicon extract --gazetteer place.tsv --rules place.yaml "из деревни Лягушкино Боровского уезда"
+lexicon extract --gazetteer place.tsv --rules place.yaml "из деревни Лягушкино Боровского уезда и села Покровское"
 ```
 ```
-DOC  START  END  TYPE      SURFACE            NORMAL     REFS  FLAGS  SCORE
-1    5      38   division  деревни Лягушкино  Лягушкино  d1           8.50
-1    39     70   division  Боровского уезда   Боровский  d2           6.50
+DOC  START  END  TYPE      SURFACE            NORMAL                 REFS  FLAGS                SCORE
+1    5      38   division  деревни Лягушкино  Лягушкино              d1                         8.50
+1    39     70   division  Боровского уезда   Боровский              d2                         6.50
+1    74     103  division  села Покровское    покровский|покровское        ambiguous,candidate  3.25
 ```
+
+«села Покровское» — кандидат от триггера: записи о нём нет, его
+нормальные формы — леммы «Покровское», на настоящей базе их две, отсюда
+`ambiguous` и штраф за неоднозначность.
 
 `--format jsonl` печатает по объекту JSON на спан: `doc`, `start`, `end`,
 `rune_start`, `rune_end`, `type`, `surface`, `normal`, `refs`, `attrs`,
@@ -178,8 +199,9 @@ printf 'Лягушкино\nиз Боровского уезда\n' | lexicon ex
 
 **Поведение в 0.2:** один профиль анализатора, `text` (все включённые
 виды словарей), обслуживает и документы, и псевдонимы; два файла
-`--gazetteer` с одинаковым базовым именем падают как дубликат имени
-источника.
+`--gazetteer` с одинаковым базовым именем без расширения (`a/x.tsv`,
+`b/x.txt`) падают как дубликат имени источника. С `--explain` колонки
+таблицы после блока обоснования могут съезжать.
 
 ## `golden` — оценить эталонный набор
 
@@ -218,4 +240,6 @@ lexicon: golden: below threshold
 ## История
 
 - 0.1.0 — `analyze`, `dicts list`, `dicts fetch`.
-- 0.2 (не выпущено) — `extract`, `golden`.
+- 0.2 (не выпущено) — `extract`, `golden`. `extract -` берёт строки stdin
+  как прочитаны (раньше обрезал их, сдвигая смещения); справка помечает
+  необязательные флаги как необязательные.
