@@ -300,8 +300,8 @@ and mark them up by their full words.
 `abbrev.<name>.tsv` or a built-in — whose wordform column is the
 abbreviation with its dot or hyphen and whose lemma column is the full
 word. A dotted word is first looked up with its dot, a hyphenated word
-first as a whole; the lemma is flagged `abbrev`, and `Term.Form` includes
-the dot («с.»). lexicon ships no abbreviation list: it is host data.
+first as a whole; the lemma of an abbreviated form is flagged `abbrev`,
+and `Term.Form` includes the dot («с.»). lexicon ships no abbreviation list: it is host data.
 
 ```
 крестьянин	кр-нин	NOUN
@@ -322,6 +322,12 @@ the dot («с.»). lexicon ships no abbreviation list: it is host data.
   question ([todo](../todo.md)).
 - Without an abbreviation dictionary the base dictionary decides: in the
   OpenCorpora base «г.» gives «г», «кр-нин» is guessed.
+
+**History:** 0.2.1 — `abbrev` marks only an abbreviated form: a full word
+that an abbreviation dictionary also knows («сын», «деревня», «город») is no
+longer flagged `abbrev`, so a NER span over it is no longer `Abbrev` (nor
+`Ambiguous` because of it), and a sentence dot after it ends the sentence
+(⚠ re-extract: `ner-2`). Lemmas and index terms are unchanged.
 
 ## 10. Your own dictionaries: files and built-ins
 
@@ -426,7 +432,7 @@ Extracted spans have their own version, `ner.Result.Version`
 
 | Part | Changes when | Example value |
 |---|---|---|
-| extractor version | NER rules of the library change spans (⚠ re-extract) | `ner-1` |
+| extractor version | NER rules of the library change spans (⚠ re-extract) | `ner-2` |
 | gazetteer snapshot | a source is recompiled from new content or with a new analyzer | a hash |
 | rule book | rule files change | a hash |
 | pipeline configuration | profiles, weights, nesting, `MinLemmaMatchRunes` change | a hash |
@@ -443,6 +449,9 @@ alone is enough to invalidate caches of dictionary lookups.
 
 **History:** every later entry marked ⚠ reindex or ⚠ re-extract on this
 page names the part it bumps.
+- 0.2.1 — extractor version `ner-2`: the `abbrev` flag fix
+  ([scenario 9](#9-abbreviations-of-records)) changes span flags and
+  sentence ends (⚠ re-extract).
 
 ## 14. Inspect by hand
 

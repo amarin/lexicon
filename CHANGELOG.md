@@ -5,6 +5,22 @@ Notable changes of the project are recorded in this file (format inspired by
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-09-26
+
+### Fixed
+
+- `lexicon`: `FlagAbbrev` marks only an abbreviated form. A full word that an
+  abbreviation dictionary also lists as a lemma («сын», «деревня», «город»)
+  got `abbrev` when its lemma came from that dictionary's reading (no base
+  dictionary, or a profile filtering the base readings out); now the flag
+  is set only when the analysed form (normalized like the lemma) differs
+  from the lemma text. «с.», «г.», «кр-нин» are unchanged; lemmas and index
+  terms are unchanged (`analyzerVersion` stays "2", no reindex).
+- `ner`, `gazetteer`: through the fix above, a span over such a full word is
+  no longer flagged `Abbrev` (nor `Ambiguous` by it), and a sentence dot
+  after it («…Покровское село.») ends the sentence instead of being taken
+  for an abbreviation dot. `extractorVersion` is `ner-2` (⚠ re-extract).
+
 ## [0.2.0] - 2026-09-26
 
 ### Added
