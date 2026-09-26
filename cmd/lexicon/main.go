@@ -2,12 +2,12 @@
 // scores entity spans, and manages the dictionary directory:
 //
 //	lexicon analyze [--dicts DIR] [--ortho modern|prereform] [--profile SPEC] [--mode index|full] TEXT...
-//	lexicon extract --dicts DIR [--ortho modern|prereform] --gazetteer FILE... [--rules FILE...]
-//	                [--nest outer>inner...] [--tags a,b] [--types a,b] [--explain] [--format table|jsonl] TEXT...|-
-//	lexicon golden --cases FILE.jsonl --dicts DIR [--ortho modern|prereform] --gazetteer FILE... [--rules FILE...]
-//	               [--nest outer>inner...] [--min-precision X] [--min-recall Y]
 //	lexicon dicts list [--dicts DIR]
 //	lexicon dicts fetch [--dicts DIR] [--force]
+//	lexicon extract [--dicts DIR] [--ortho modern|prereform] [--gazetteer FILE]... [--rules FILE]...
+//	                [--nest OUTER>INNER]... [--tags T,...] [--types T,...] [--explain] [--format table|jsonl] TEXT...|-
+//	lexicon golden --cases FILE.jsonl [--dicts DIR] [--ortho modern|prereform] [--gazetteer FILE]... [--rules FILE]...
+//	               [--nest OUTER>INNER]... [--min-precision N] [--min-recall N]
 package main
 
 import (
@@ -21,14 +21,14 @@ import (
 
 const usage = `usage:
   lexicon analyze [--dicts DIR] [--ortho modern|prereform] [--profile NAME[:KIND[G1|G2],KIND...]] [--mode index|full] TEXT...
-  lexicon extract --dicts DIR [--ortho modern|prereform] --gazetteer FILE... [--rules FILE...]
-                  [--nest outer>inner...] [--tags a,b] [--types a,b] [--explain] [--format table|jsonl] TEXT...|-
-                  find entity spans (gazetteers + rules)
-  lexicon golden --cases FILE.jsonl --dicts DIR [--ortho modern|prereform] --gazetteer FILE... [--rules FILE...]
-                 [--nest outer>inner...] [--min-precision X] [--min-recall Y]
-                 score extraction against golden JSONL cases
   lexicon dicts list [--dicts DIR]
   lexicon dicts fetch [--dicts DIR] [--force]
+  lexicon extract [--dicts DIR] [--ortho modern|prereform] [--gazetteer FILE]... [--rules FILE]...
+                  [--nest OUTER>INNER]... [--tags T,...] [--types T,...] [--explain] [--format table|jsonl] TEXT...|-
+                  find entity spans (gazetteers + rules); - reads one document per line from stdin
+  lexicon golden --cases FILE.jsonl [--dicts DIR] [--ortho modern|prereform] [--gazetteer FILE]... [--rules FILE]...
+                 [--nest OUTER>INNER]... [--min-precision N] [--min-recall N]
+                 score extraction against golden JSONL cases
 Flags go before the text. DIR defaults to $LEXICON_DICTS, $XDG_DATA_HOME/lexicon/dicts or ~/.local/share/lexicon/dicts.
 `
 
