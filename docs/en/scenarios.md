@@ -7,7 +7,7 @@ do it, and a runnable example. [library.md](library.md) and
 [cli.md](cli.md) are the reference for every call named here; this page is
 the "why" and "which one".
 
-Each scenario states the version it is available since; "0.2
+Each scenario states the version it is available since; "X
 (unreleased)" means the feature is on `main` but not yet in a tagged
 release (install it with `go get github.com/amarin/lexicon@main`). Three more marks
 keep a per-feature changelog next to the feature:
@@ -47,12 +47,12 @@ gazetteers and rules are tiny TSVs and YAML strings in code.
 | 12 | [Switch dictionaries on and off, reload without restart](#12-switch-dictionaries-on-and-off-reload-without-restart) | 0.1.0 | [registry](../../examples/registry/main.go) |
 | 13 | [Know when to reindex](#13-know-when-to-reindex) | 0.1.0 | [registry](../../examples/registry/main.go), `ExampleAnalyzer_Version` |
 | 14 | [Inspect by hand](#14-inspect-by-hand) | 0.1.0 | CLI `analyze`, `dicts list` |
-| 15 | [Find entities with dictionaries](#15-find-entities-with-dictionaries) | 0.2 (unreleased) | [ner](../../examples/ner/main.go) |
-| 16 | [Context words, triggers and document tags](#16-context-words-triggers-and-document-tags) | 0.2 (unreleased) | [ner](../../examples/ner/main.go) |
-| 17 | [Overlapping matches, nesting and explanations](#17-overlapping-matches-nesting-and-explanations) | 0.2 (unreleased) | [ner](../../examples/ner/main.go) |
-| 18 | [Keep gazetteers current without a restart](#18-keep-gazetteers-current-without-a-restart) | 0.2 (unreleased) | [gazetteer](../../examples/gazetteer/main.go) |
-| 19 | [Measure quality on a golden set](#19-measure-quality-on-a-golden-set) | 0.2 (unreleased) | [golden](../../examples/golden/main.go) |
-| 20 | [Try NER by hand](#20-try-ner-by-hand) | 0.2 (unreleased) | CLI `extract`, `golden` |
+| 15 | [Find entities with dictionaries](#15-find-entities-with-dictionaries) | 0.2.0 | [ner](../../examples/ner/main.go) |
+| 16 | [Context words, triggers and document tags](#16-context-words-triggers-and-document-tags) | 0.2.0 | [ner](../../examples/ner/main.go) |
+| 17 | [Overlapping matches, nesting and explanations](#17-overlapping-matches-nesting-and-explanations) | 0.2.0 | [ner](../../examples/ner/main.go) |
+| 18 | [Keep gazetteers current without a restart](#18-keep-gazetteers-current-without-a-restart) | 0.2.0 | [gazetteer](../../examples/gazetteer/main.go) |
+| 19 | [Measure quality on a golden set](#19-measure-quality-on-a-golden-set) | 0.2.0 | [golden](../../examples/golden/main.go) |
+| 20 | [Try NER by hand](#20-try-ner-by-hand) | 0.2.0 | CLI `extract`, `golden` |
 | — | [Planned: patterns](#planned-patterns) | 0.3 | — |
 
 ## 1. Compare words across orthographies
@@ -262,7 +262,7 @@ without a dictionary lookup. Offsets come from the token
 
 **Available since:** 0.1.0.
 
-**History:** 0.2 (unreleased) — dictionary NER runs on top of this mode:
+**History:** 0.2.0 — dictionary NER runs on top of this mode:
 gazetteers, rules and resolved spans, scenarios
 [15](#15-find-entities-with-dictionaries)–[20](#20-try-ner-by-hand).
 
@@ -517,7 +517,7 @@ host's job.
 **Example:** [ner](../../examples/ner/main.go); CLI `extract`
 ([scenario 20](#20-try-ner-by-hand)).
 
-**Available since:** 0.2 (unreleased).
+**Available since:** 0.2.0.
 
 **Behaviour in 0.2:**
 - A one-word match found only by lemma is dropped when the alias is shorter
@@ -535,12 +535,6 @@ host's job.
   span's `Normal` comes from the `Canonical` fields of its matched entries
   ([scenario 18](#18-keep-gazetteers-current-without-a-restart)).
 - The interner behind compiled aliases is process-wide and never shrinks.
-
-**History:**
-- 0.2 (unreleased) — `Ambiguous` no longer follows homonymy of a covered
-  word («стали»: сталь or стать), only an ambiguous abbreviation; before
-  the fix most spans on the real base were flagged. ⚠ re-extract (not
-  bumped: 0.2 is unreleased).
 
 ## 16. Context words, triggers and document tags
 
@@ -595,7 +589,7 @@ is 8. Errors name the place: `file.yaml:12: places/hint 0: …`.
 candidate, a set switched on by `period:pre1917`); CLI `extract --rules
 --tags`.
 
-**Available since:** 0.2 (unreleased).
+**Available since:** 0.2.0.
 
 **Behaviour in 0.2:**
 - A negative trigger affects only gazetteer spans, never a trigger
@@ -611,13 +605,6 @@ candidate, a set switched on by `period:pre1917`); CLI `extract --rules
   that name's own candidate is considered; keep trigger windows short.
 - Rules are compiled once: to change them, build a new `Pipeline`
   (a hot-swap is an open question, [todo](../todo.md)).
-
-**History:**
-- 0.2 (unreleased) — a trigger's `weight` is added to the candidate it
-  proposes (it was ignored there), and `absorb` also extends a gazetteer
-  span the trigger boosts (it extended only proposed candidates, so span
-  ranges depended on whether the gazetteer knew the name). ⚠ re-extract
-  (not bumped: 0.2 is unreleased).
 
 ## 17. Overlapping matches, nesting and explanations
 
@@ -650,7 +637,7 @@ res, _ := p.Extract(ctx, doc, ner.Explain())
 **Example:** [ner](../../examples/ner/main.go) (evidence of every span);
 CLI `extract --nest 'city>street' --explain` (quote `>` from the shell).
 
-**Available since:** 0.2 (unreleased).
+**Available since:** 0.2.0.
 
 ## 18. Keep gazetteers current without a restart
 
@@ -674,7 +661,7 @@ never fatal; a source that fails as a whole keeps its previous data.
 
 **Example:** [gazetteer](../../examples/gazetteer/main.go).
 
-**Available since:** 0.2 (unreleased).
+**Available since:** 0.2.0.
 
 **Behaviour in 0.2:**
 - Only the gazetteer snapshot is pinned per `Extract`: the analyzer and its
@@ -715,7 +702,7 @@ if v := rep.Check(0.9, 0.9); len(v) > 0 {
 
 **Example:** [golden](../../examples/golden/main.go); CLI `golden`.
 
-**Available since:** 0.2 (unreleased).
+**Available since:** 0.2.0.
 
 ## 20. Try NER by hand
 
@@ -732,17 +719,13 @@ a golden set, without writing Go.
 below a threshold. Morphology comes from `--dicts` and `--ortho` as for
 `analyze`. See [cli.md](cli.md).
 
-**Available since:** 0.2 (unreleased).
+**Available since:** 0.2.0.
 
 **Behaviour in 0.2:** the CLI configures one profile, `text` (every enabled
 dictionary kind), for documents and aliases alike, so a golden case with
 another `profile` fails the run; a gazetteer source is named after its
 file's basename without the extension, so `a/x.tsv` and `b/x.txt` fail as
 duplicates.
-
-**History:**
-- 0.2 (unreleased) — `extract -` keeps each stdin line as read; it used to
-  trim spaces, so offsets referred to the trimmed line.
 
 ## Planned: patterns
 

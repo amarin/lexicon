@@ -70,7 +70,7 @@ Project instructions for AI agents (Codex, Claude, LGTM).
     when it bumps `ner.extractorVersion` only (RU: «⚠ переиндексация»,
     «⚠ переизвлечение»); CHANGELOG stays the source of truth;
   - README marks features with the version they appear in (`*(0.1.0)*`;
-    implemented but not yet released: `*(0.2, unreleased)*`; `*(planned: 0.3)*`).
+    implemented but not yet released: `*(0.3, unreleased)*`; `*(planned: 0.3)*`).
 
 ## Main commands
 - `go build ./...`, `go vet ./...`, `gofmt -l .` (must be empty).

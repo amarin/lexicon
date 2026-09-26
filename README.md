@@ -17,7 +17,7 @@ a document:
   profile for each field (names, places, general vocabulary); pre-reform
   adjective endings and abbreviations of records; search-index terms,
   search-query parsing and per-token markup from one analyzer.
-- **Dictionary NER** *(0.2, unreleased)*. Multi-word aliases matched by
+- **Dictionary NER** *(0.2.0)*. Multi-word aliases matched by
   lemmas or surface forms, variant groups, abbreviation hints, trigger
   words, and rule sets switched on by document tags; pattern rules
   *(planned: 0.3)*. Overlapping matches are resolved, and every span can
@@ -26,8 +26,7 @@ a document:
 - **Dictionaries as data.** Morphology dictionaries are gomorphy `.dat` or
   TSV files with provenance manifests, switched on and off and hot-reloaded
   without locking readers *(0.1.0)*. Gazetteers as TSV and rules as YAML,
-  rebuilt one source in milliseconds and swapped in atomically *(0.2,
-  unreleased)*.
+  rebuilt one source in milliseconds and swapped in atomically *(0.2.0)*.
 
 What each feature is for, how to use it and since which version:
 [usage scenarios](docs/en/scenarios.md) ([по-русски](docs/ru/scenarios.md)).
@@ -38,13 +37,13 @@ What each feature is for, how to use it and since which version:
   query time *(0.1.0)*
 - Entity extraction from archival and historical documents (parish
   registers, censuses, letters) — the text analysis *(0.1.0)*, dictionary
-  NER *(0.2, unreleased)*
+  NER *(0.2.0)*
 - Genealogy and digital-humanities tools
 - Pre-annotation of text before human review, or a lightweight provider
   inside a larger NER pipeline — per-token markup *(0.1.0)*, entity spans
-  *(0.2, unreleased)*
+  *(0.2.0)*
 - Domain-specific NER where you control the entity types and dictionaries
-  *(0.2, unreleased)*
+  *(0.2.0)*
 
 lexicon only marks up text. It does not link the spans it finds to your
 data: resolving a mention to a specific person or place, storing the
@@ -56,10 +55,10 @@ annotations and exposing an HTTP or MCP API are left to the host application.
 tokenization, the dictionary `Registry`, and the `Analyzer` (`ModeIndex`,
 `ModeFull`, `ParseQuery`), plus `basefetch` and the `lexicon` CLI.
 
-Dictionary NER is implemented and unreleased (0.2): `gazetteer`, `rules`,
-`ner`, `nertest`, and the `lexicon extract`/`lexicon golden` CLI commands.
-Rule sets scoped by document tags (`When`, `Book.Active`) ship in 0.2;
-pattern-based facts are planned for 0.3 — see the [roadmap](docs/todo.md).
+0.2.0 is released: dictionary NER — `gazetteer`, `rules`, `ner`, `nertest`,
+and the `lexicon extract`/`lexicon golden` CLI commands, with rule sets
+scoped by document tags (`When`, `Book.Active`). Pattern-based facts are
+planned for 0.3 — see the [roadmap](docs/todo.md).
 
 ## Installation
 
@@ -101,7 +100,7 @@ query := a.ParseQuery("Кузнецов", name)                         // for a
 version := a.Version() // store with derived data; rebuild when it changes
 ```
 
-Dictionary NER *(0.2, unreleased)* on the same analyzer:
+Dictionary NER *(0.2.0)* on the same analyzer:
 
 ```go
 text := lexicon.Profile{Name: "text"} // all dictionaries
@@ -131,8 +130,8 @@ go run ./cmd/lexicon dicts fetch                      # base dictionary into ~/.
 go run ./cmd/lexicon dicts list
 go run ./cmd/lexicon analyze --ortho prereform "Кр-нин с. Покровскаго, 1834 г."
 go run ./cmd/lexicon analyze --mode full --profile 'name:base[Name|Surn|Patr],surname' "У Ивана сын Петр"
-go run ./cmd/lexicon extract --gazetteer place.tsv --rules place.yaml "деревня Покровское"  # 0.2, unreleased
-go run ./cmd/lexicon golden --gazetteer place.tsv --rules place.yaml --cases cases.jsonl    # 0.2, unreleased
+go run ./cmd/lexicon extract --gazetteer place.tsv --rules place.yaml "деревня Покровское"  # 0.2.0
+go run ./cmd/lexicon golden --gazetteer place.tsv --rules place.yaml --cases cases.jsonl    # 0.2.0
 ```
 
 Flags, output format and sample output: [CLI](docs/en/cli.md).

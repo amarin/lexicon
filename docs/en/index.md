@@ -5,7 +5,7 @@
 ## Using lexicon
 
 - [Usage scenarios: what each feature is for, since which version](scenarios.md)
-  — text analysis (0.1.0): scenarios 1–14; dictionary NER (0.2, unreleased):
+  — text analysis (0.1.0): scenarios 1–14; dictionary NER (0.2.0):
   [scenarios 15–20](scenarios.md#15-find-entities-with-dictionaries)
 - [Installation](installation.md)
 - [CLI: lexicon](cli.md)

@@ -20,8 +20,8 @@ What each package brings into your binary:
 |---|---|
 | `github.com/amarin/lexicon` (root), `textnorm` | `gomorphy/pkg/morphology`, `golang.org/x/text` |
 | `basefetch` (optional) | the above plus `gomorphy/pkg/pymorphy` and `github.com/amarin/logging` (zap) |
-| `gazetteer` *(0.2, unreleased)* | the root package and `textnorm` only |
-| `rules`, `ner`, `nertest` *(0.2, unreleased)* | the above plus `go.yaml.in/yaml/v3` (rule files) |
+| `gazetteer` *(0.2.0)* | the root package and `textnorm` only |
+| `rules`, `ner`, `nertest` *(0.2.0)* | the above plus `go.yaml.in/yaml/v3` (rule files) |
 | `cmd/lexicon` | all of the above (it uses `basefetch` and `ner`) |
 
 A host that does not import `basefetch` never compiles the pymorphy loader

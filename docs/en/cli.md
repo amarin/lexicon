@@ -21,7 +21,7 @@ lexicon extract [--dicts DIR] [--ortho modern|prereform] [--gazetteer FILE]... [
 lexicon golden --cases FILE.jsonl [--dicts DIR] [--ortho modern|prereform] [--gazetteer FILE]... [--rules FILE]... [--nest OUTER>INNER]... [--min-precision N] [--min-recall N]
 ```
 
-`extract` and `golden` are *(0.2, unreleased)*.
+`extract` and `golden` are *(0.2.0)*.
 
 Flags go before the text. Exit codes: 0 — success, 1 — failure, 2 — usage
 error.
@@ -126,7 +126,7 @@ not guessed ([scenario 4](scenarios.md#4-terms-for-a-search-index),
 
 ## `extract` — entity spans of a text
 
-*(0.2, unreleased)* Runs the NER pipeline
+*(0.2.0)* Runs the NER pipeline
 ([scenarios 15–20](scenarios.md#15-find-entities-with-dictionaries)) over
 each TEXT argument, or over stdin with `-` (one document per line, taken
 exactly as read so offsets refer to the line; blank lines skipped).
@@ -204,7 +204,7 @@ evidence block may be misaligned.
 
 ## `golden` — score a golden set
 
-*(0.2, unreleased)* Runs the pipeline over golden cases
+*(0.2.0)* Runs the pipeline over golden cases
 ([scenario 19](scenarios.md#19-measure-quality-on-a-golden-set)) and
 prints strict (`P`, `R`, `F1`: exact bytes and type) and partial (`P~`,
 `R~`, `F1~`: overlap) scores per type, the strict counts, and every missed
@@ -239,6 +239,4 @@ map it to tags; use `nertest.WithTags` from Go), and a case with a
 ## History
 
 - 0.1.0 — `analyze`, `dicts list`, `dicts fetch`.
-- 0.2 (unreleased) — `extract`, `golden`. `extract -` keeps stdin lines as
-  read (it trimmed them, shifting offsets); the usage text marks optional
-  flags as optional.
+- 0.2.0 — `extract`, `golden`.

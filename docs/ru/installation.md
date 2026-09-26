@@ -20,8 +20,8 @@ go get github.com/amarin/lexicon
 |---|---|
 | `github.com/amarin/lexicon` (корень), `textnorm` | `gomorphy/pkg/morphology`, `golang.org/x/text` |
 | `basefetch` (необязательный) | то же плюс `gomorphy/pkg/pymorphy` и `github.com/amarin/logging` (zap) |
-| `gazetteer` *(0.2, не выпущено)* | только корневой пакет и `textnorm` |
-| `rules`, `ner`, `nertest` *(0.2, не выпущено)* | то же плюс `go.yaml.in/yaml/v3` (файлы правил) |
+| `gazetteer` *(0.2.0)* | только корневой пакет и `textnorm` |
+| `rules`, `ner`, `nertest` *(0.2.0)* | то же плюс `go.yaml.in/yaml/v3` (файлы правил) |
 | `cmd/lexicon` | всё перечисленное (использует `basefetch` и `ner`) |
 
 Хост, не импортирующий `basefetch`, не компилирует ни загрузчик pymorphy,

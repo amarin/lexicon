@@ -5,6 +5,8 @@ Notable changes of the project are recorded in this file (format inspired by
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-26
+
 ### Added
 
 - `gazetteer`: `Entry`/`EntryFlag` (`RequiresContext`, `SurfaceOnly`,
@@ -47,8 +49,8 @@ Notable changes of the project are recorded in this file (format inspired by
 
 ### Fixed
 
-Found in the pre-release review of 0.2 (2026-09-26); they change behaviour
-added above, before any release.
+Found in the pre-release review (2026-09-26); they change behaviour added
+above before 0.2.0 was tagged.
 
 - `ner`: a span is `Ambiguous` from its covered words only for an
   ambiguous abbreviation no rule absorbed; homonymy of an ordinary word

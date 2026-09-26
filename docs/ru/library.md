@@ -9,10 +9,10 @@ godoc каждого символа; эта страница группируе�
 - [textnorm](#textnorm) — орфография и токены, без словарей
 - [lexicon](#lexicon) — словари (`Registry`), `Profile`, `Analyzer`
 - [basefetch](#basefetch) — скачивание базового словаря
-- [gazetteer](#gazetteer) — записи хоста, скомпилированные для сопоставления *(0.2, не выпущено)*
-- [rules](#rules) — подсказки, триггеры, наборы правил по тегам документа *(0.2, не выпущено)*
-- [ner](#ner) — конвейер извлечения *(0.2, не выпущено)*
-- [nertest](#nertest) — оценка на эталонном наборе *(0.2, не выпущено)*
+- [gazetteer](#gazetteer) — записи хоста, скомпилированные для сопоставления *(0.2.0)*
+- [rules](#rules) — подсказки, триггеры, наборы правил по тегам документа *(0.2.0)*
+- [ner](#ner) — конвейер извлечения *(0.2.0)*
+- [nertest](#nertest) — оценка на эталонном наборе *(0.2.0)*
 - [Контракты](#контракты) — смещения, версии, конкурентность, ошибки
 
 ## textnorm
@@ -229,7 +229,7 @@ func Fetch(dst string) (version string, err error)
 
 ## gazetteer
 
-`import "github.com/amarin/lexicon/gazetteer"` — *(0.2, не выпущено)*
+`import "github.com/amarin/lexicon/gazetteer"` — *(0.2.0)*
 
 Компилирует псевдонимы записей хоста в префиксные деревья по токенам и
 сопоставляет их с разобранным текстом. Сообщает о каждом совпадении,
@@ -334,7 +334,7 @@ type Config struct {
 
 ## rules
 
-`import "github.com/amarin/lexicon/rules"` — *(0.2, не выпущено)*
+`import "github.com/amarin/lexicon/rules"` — *(0.2.0)*
 
 Правила как данные, проверенные и собранные в неизменяемую `Book`.
 Импортирует `go.yaml.in/yaml/v3`.
@@ -399,7 +399,7 @@ type RuleSet struct {
 
 ## ner
 
-`import "github.com/amarin/lexicon/ner"` — *(0.2, не выпущено)*
+`import "github.com/amarin/lexicon/ner"` — *(0.2.0)*
 
 ```go
 func New(cfg Config) (*Pipeline, error)
@@ -469,7 +469,7 @@ type Span struct {
 
 ## nertest
 
-`import "github.com/amarin/lexicon/nertest"` — *(0.2, не выпущено)*
+`import "github.com/amarin/lexicon/nertest"` — *(0.2.0)*
 
 ```go
 type Case struct {

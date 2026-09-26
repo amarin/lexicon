@@ -9,10 +9,10 @@ symbol is the final word; this page groups them and states the contracts.
 - [textnorm](#textnorm) — orthography and tokens, no dictionaries
 - [lexicon](#lexicon) — dictionaries (`Registry`), `Profile`, `Analyzer`
 - [basefetch](#basefetch) — download the base dictionary
-- [gazetteer](#gazetteer) — host records compiled for matching *(0.2, unreleased)*
-- [rules](#rules) — hints, triggers, rule sets by document tags *(0.2, unreleased)*
-- [ner](#ner) — the extraction pipeline *(0.2, unreleased)*
-- [nertest](#nertest) — golden-set scoring *(0.2, unreleased)*
+- [gazetteer](#gazetteer) — host records compiled for matching *(0.2.0)*
+- [rules](#rules) — hints, triggers, rule sets by document tags *(0.2.0)*
+- [ner](#ner) — the extraction pipeline *(0.2.0)*
+- [nertest](#nertest) — golden-set scoring *(0.2.0)*
 - [Contracts](#contracts) — offsets, versions, concurrency, errors
 
 ## textnorm
@@ -227,7 +227,7 @@ import it only where you fetch.
 
 ## gazetteer
 
-`import "github.com/amarin/lexicon/gazetteer"` — *(0.2, unreleased)*
+`import "github.com/amarin/lexicon/gazetteer"` — *(0.2.0)*
 
 Compiles aliases of host records into token tries and matches them against
 analyzed text. It reports every match, overlapping ones included; choosing
@@ -330,7 +330,7 @@ Aliases and snapshots are shared and read-only.
 
 ## rules
 
-`import "github.com/amarin/lexicon/rules"` — *(0.2, unreleased)*
+`import "github.com/amarin/lexicon/rules"` — *(0.2.0)*
 
 Rules as data, validated into an immutable `Book`. Imports
 `go.yaml.in/yaml/v3`.
@@ -395,7 +395,7 @@ and without a trailing dot, whatever orthography the document uses.
 
 ## ner
 
-`import "github.com/amarin/lexicon/ner"` — *(0.2, unreleased)*
+`import "github.com/amarin/lexicon/ner"` — *(0.2.0)*
 
 ```go
 func New(cfg Config) (*Pipeline, error)
@@ -463,7 +463,7 @@ checks `ctx` between stages.
 
 ## nertest
 
-`import "github.com/amarin/lexicon/nertest"` — *(0.2, unreleased)*
+`import "github.com/amarin/lexicon/nertest"` — *(0.2.0)*
 
 ```go
 type Case struct {

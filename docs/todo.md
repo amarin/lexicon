@@ -14,14 +14,11 @@ Mark completed items with `[x]` and move their write-up to
 | Milestone | Released | Details |
 |---|---|---|
 | v0.1 — text analysis: `textnorm`, `Registry`, `Analyzer`, `basefetch`, CLI `analyze`/`dicts` | 0.1.0, 2026-09-25 | [implementation/v0.1-analysis.md](implementation/v0.1-analysis.md) |
-| User documentation: scenarios, installation, CLI, library (EN + RU), runnable examples, godoc examples | unreleased | [en/index.md](en/index.md), [ru/index.md](ru/index.md), [examples/](../examples/README.md) |
-| v0.2 — dictionary NER: `gazetteer`, `rules` (hints, triggers, rule sets by document tags), `ner`, `nertest`, CLI `extract`/`golden`; user docs (scenarios 15–20, EN + RU) and examples `ner`, `gazetteer`, `golden` | unreleased | [implementation/v0.2-ner.md](implementation/v0.2-ner.md) |
+| User documentation: scenarios, installation, CLI, library (EN + RU), runnable examples, godoc examples | 0.2.0, 2026-09-26 | [en/index.md](en/index.md), [ru/index.md](ru/index.md), [examples/](../examples/README.md) |
+| v0.2 — dictionary NER: `gazetteer`, `rules` (hints, triggers, rule sets by document tags), `ner`, `nertest`, CLI `extract`/`golden`; user docs (scenarios 15–20, EN + RU) and examples `ner`, `gazetteer`, `golden` | 0.2.0, 2026-09-26 | [implementation/v0.2-ner.md](implementation/v0.2-ner.md) |
 
 ## Next milestones
 
-- [ ] **Release 0.2.0**: tag v0.2 (dictionary NER); turn "0.2
-  (unreleased)" into "0.2.0" in the scenarios, CLI and library pages (both
-  languages), README markers and CHANGELOG.
 - [ ] **v0.3 — patterns**: `rules` sequence patterns and facts (rule sets
   by document tags already ship in 0.2).
   [Plan](plans/2026-09-24-v0.3-patterns.md).
