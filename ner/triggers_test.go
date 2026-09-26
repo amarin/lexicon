@@ -102,3 +102,16 @@ func TestTriggerWeightScoresCandidate(t *testing.T) {
 		t.Fatalf("weight 1 → %v, weight 5 → %v: want a difference of 4", one, five)
 	}
 }
+
+// TestTriggerAbsorbsIntoBoostedMatch: absorb extends a boosted gazetteer span
+// over the adjacent keyword, as it does a proposed candidate, so the span's
+// range does not depend on whether the gazetteer knows the name.
+func TestTriggerAbsorbsIntoBoostedMatch(t *testing.T) {
+	p, _ := newPipeline(t, testEntries(), placesRules)
+	res := extract(t, p, Doc{Text: "из села Лягушкино и села Покровское"})
+	known := spanOf(t, res.Spans, "division", "села Лягушкино")
+	unknown := spanOf(t, res.Spans, "division", "села Покровское")
+	if known.Flags.Has(Candidate) || known.Refs[0] != "division:1" || !unknown.Flags.Has(Candidate) {
+		t.Fatalf("known %+v, unknown %+v", known, unknown)
+	}
+}

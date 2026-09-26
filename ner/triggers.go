@@ -5,7 +5,8 @@ import "github.com/amarin/lexicon/rules"
 // applyTriggers proposes candidates, or boosts/penalizes overlapping
 // gazetteer candidates of the trigger's type (decision D5). The rule's
 // weight is evidence either way: added to a proposed candidate or to a
-// boosted one, subtracted by a negative trigger.
+// boosted one, subtracted by a negative trigger. Absorb extends a proposed
+// candidate and a boosted one alike over an adjacent keyword.
 //
 // Gazetteer candidates overlapping the covered words are looked up in a
 // position index. Candidates proposed here are never consulted by later
@@ -43,6 +44,11 @@ func (s *state) applyTriggers(ts []*rules.TriggerRule) {
 				c.context = true
 				boosted = true
 				s.note(c, "trigger «%s» → %s %+g", kw.Token.Raw, tr.Type, w)
+				if tr.Absorb {
+					start, end := c.start, c.end
+					s.absorb(c, k)
+					idx.move(c, start, end)
+				}
 			}
 			if tr.Negative || boosted || blockedOverlap(blocked, tr.Type, a, b) {
 				continue
