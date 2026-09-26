@@ -89,3 +89,19 @@ func (c *candidate) attrs() map[string]string {
 func (c *candidate) readings() int {
 	return max(len(c.refs()), len(c.normalForms()), 1)
 }
+
+// recomputeOrigin sets origin from the surviving hits: originSurface if any
+// of them matched by surface, originLemma otherwise. A no-op for candidates
+// without hits (trigger candidates keep the origin they were created with).
+func (c *candidate) recomputeOrigin() {
+	if len(c.hits) == 0 {
+		return
+	}
+	c.origin = originLemma
+	for _, h := range c.hits {
+		if h.surface {
+			c.origin = originSurface
+			return
+		}
+	}
+}

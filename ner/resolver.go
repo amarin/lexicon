@@ -5,8 +5,6 @@ import (
 	"sort"
 )
 
-const epsilon = 1e-9
-
 // resolver runs weighted interval scheduling with nesting. all is sorted
 // by end position; memo caches the best selection inside each candidate.
 type resolver struct {
@@ -29,7 +27,7 @@ func (r *resolver) schedule(cs []*candidate) *selection {
 		c := cs[j-1]
 		p := sort.Search(j-1, func(i int) bool { return cs[i].end > c.start })
 		incl := c.score + r.inner(c).value + best[p]
-		if incl > best[j-1]+epsilon {
+		if incl > best[j-1] {
 			best[j], take[j], prev[j] = incl, true, p
 		} else {
 			best[j] = best[j-1]

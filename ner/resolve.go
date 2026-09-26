@@ -1,9 +1,6 @@
 package ner
 
-import (
-	"math"
-	"sort"
-)
+import "sort"
 
 // resolve selects the output candidates. Order of equal-end candidates is
 // deterministic: start desc, score desc, type asc, creation order.
@@ -61,7 +58,11 @@ func (s *state) attachAlternatives(chosen, live []*candidate) {
 				continue
 			}
 			c.alts = append(c.alts, o)
-			if math.Abs(o.score-c.score) < epsilon {
+			// Scores are quantized (scoreAll), so an exact comparison is safe
+			// here. This compares the span's own score only, not score plus
+			// any nested selection inside it: a tie is about the evidence for
+			// this range, not about what happens to be nested inside it.
+			if o.score == c.score {
 				c.flags |= Ambiguous
 				s.note(c, "tie with %s", o.typ)
 			}

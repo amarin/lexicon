@@ -30,12 +30,7 @@ func (s *state) filterEarly() {
 			c.removed = true
 			continue
 		}
-		c.origin = originLemma
-		for _, h := range kept {
-			if h.surface {
-				c.origin = originSurface
-			}
-		}
+		c.recomputeOrigin()
 	}
 }
 
@@ -67,6 +62,8 @@ func (s *state) filterContext() {
 		c.hits = kept
 		if len(kept) == 0 {
 			c.removed = true
+			continue
 		}
+		c.recomputeOrigin()
 	}
 }

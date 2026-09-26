@@ -83,6 +83,44 @@ func TestResolve(t *testing.T) {
 	}
 }
 
+// TestResolveFloatNoiseTie: two candidates whose scores are mathematically
+// equal but arrive by different runtime float64 additions (a classic
+// 0.1+0.2 vs 0.3 case) must still be treated as an exact tie, not decided
+// by float noise in the last bits.
+func TestResolveFloatNoiseTie(t *testing.T) {
+	a, b := 0.1, 0.2
+	c1 := &candidate{typ: "patronymic", start: 0, end: 1, bonus: a + b}
+	c2 := &candidate{typ: "surname", start: 0, end: 1, bonus: 0.3}
+	if c1.bonus == c2.bonus {
+		t.Fatalf("test setup: want raw float64 noise, got exact equality (%v == %v)", c1.bonus, c2.bonus)
+	}
+	s := &state{p: &Pipeline{weights: Weights{}}, cands: []*candidate{c1, c2}, explain: true}
+	s.scoreAll()
+	if c1.score != c2.score {
+		t.Fatalf("quantized scores must be exactly equal: %v vs %v", c1.score, c2.score)
+	}
+	chosen, _ := s.resolve()
+	if len(chosen) != 1 || chosen[0] != c1 {
+		t.Fatalf("want patronymic as the sole, deterministic winner: %+v", chosen)
+	}
+	if !c1.flags.Has(Ambiguous) {
+		t.Fatalf("tie must set Ambiguous on the winner: %+v", c1)
+	}
+	alts := s.alternatives(c1)
+	if len(alts) != 1 || alts[0].Type != "surname" {
+		t.Fatalf("loser must be kept as an alternative of the winner: %+v", alts)
+	}
+	found := false
+	for _, e := range c1.evidence {
+		if e == "tie with surname" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("winner must record the tie: %+v", c1.evidence)
+	}
+}
+
 func TestExtractResolvesOverlaps(t *testing.T) {
 	entries := append(testEntries(),
 		gazetteer.Entry{Alias: "Иван Петров", Type: "ship", Ref: "ship:1", Canonical: "Иван Петров"},
