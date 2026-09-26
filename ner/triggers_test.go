@@ -49,6 +49,31 @@ func TestTriggerRespectsBlocked(t *testing.T) {
 	assertBrief(t, extract(t, p, Doc{Text: "в деревне Сидоровке"}).Spans)
 }
 
+// TestTriggerDirLeft covers collect's left branch: the keyword follows the
+// candidate words instead of preceding them.
+func TestTriggerDirLeft(t *testing.T) {
+	const left = `sets:
+  - name: left
+    triggers:
+      - {lemma: волость, type: division, dir: left, shape: {case: title, script: cyrillic}}
+`
+	p, _ := newPipeline(t, testEntries(), left)
+	res := extract(t, p, Doc{Text: "Сидоровская волость"}, Explain())
+	assertBrief(t, res.Spans, "division:Сидоровская")
+	sp := res.Spans[0]
+	if !slices.Contains(sp.Evidence, "trigger «волость» → division candidate") {
+		t.Fatalf("evidence = %q", sp.Evidence)
+	}
+}
+
+// TestTriggerWindowStopsAtPunctuation: a break between the keyword and the
+// next word (a comma, or a sentence boundary) stops the walk before it
+// collects anything, so no candidate is proposed.
+func TestTriggerWindowStopsAtPunctuation(t *testing.T) {
+	p, _ := newPipeline(t, testEntries(), placesRules)
+	assertBrief(t, extract(t, p, Doc{Text: "Жил в деревне. Сидоровка"}).Spans)
+}
+
 func TestNegativeTrigger(t *testing.T) {
 	const neg = `sets:
   - name: neg

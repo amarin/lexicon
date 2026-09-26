@@ -3,6 +3,7 @@ package ner
 import (
 	"slices"
 	"testing"
+	"unicode/utf8"
 
 	"github.com/amarin/lexicon/gazetteer"
 )
@@ -34,6 +35,51 @@ func TestHintSetsGatedByTags(t *testing.T) {
 	assertBrief(t, extract(t, p, Doc{Text: "крестьянин Мороз"}).Spans, "estate:крестьянин")
 	assertBrief(t, extract(t, p, Doc{Text: "крестьянин Мороз", Tags: []string{"period:pre1917"}}).Spans,
 		"estate:крестьянин", "surname:Мороз")
+}
+
+// TestHintWindowStopsAtPunctuation: a comma between the keyword and the
+// candidate breaks the join, so the hint neither boosts nor absorbs it.
+func TestHintWindowStopsAtPunctuation(t *testing.T) {
+	p, _ := newPipeline(t, testEntries(), placesRules)
+	res := extract(t, p, Doc{Text: "деревня, Лягушкино"}, Explain())
+	assertBrief(t, res.Spans, "division:Лягушкино")
+	sp := res.Spans[0]
+	if slices.Contains(sp.Evidence, "hint «деревня» → division +2") {
+		t.Fatalf("expected no hint boost across punctuation, evidence = %q", sp.Evidence)
+	}
+}
+
+// TestHintWindowAtDistance: a window of 2 reaches a candidate two content
+// words away from the keyword.
+func TestHintWindowAtDistance(t *testing.T) {
+	const wide = `sets:
+  - name: wide
+    hints:
+      - {lemma: около, type: division, dir: right, window: 2, weight: 5}
+`
+	p, _ := newPipeline(t, testEntries(), wide)
+	res := extract(t, p, Doc{Text: "около большое Лягушкино"}, Explain())
+	assertBrief(t, res.Spans, "division:Лягушкино")
+	sp := res.Spans[0]
+	if !slices.Contains(sp.Evidence, "hint «около» → division +5") {
+		t.Fatalf("evidence = %q", sp.Evidence)
+	}
+}
+
+// TestAbsorbedSpanOffsetsMatchSurface: an absorbed span (the hint keyword
+// merged into the candidate) still satisfies the Text[Start:End] == Surface
+// invariant, in bytes and in runes.
+func TestAbsorbedSpanOffsetsMatchSurface(t *testing.T) {
+	p, _ := newPipeline(t, testEntries(), placesRules)
+	doc := Doc{Text: "Жил в дер. Лягушкиной."}
+	res := extract(t, p, doc)
+	d := spanOf(t, res.Spans, "division", "дер. Лягушкиной")
+	if doc.Text[d.Start:d.End] != d.Surface {
+		t.Fatalf("Text[%d:%d] = %q, want Surface %q", d.Start, d.End, doc.Text[d.Start:d.End], d.Surface)
+	}
+	if utf8.RuneCountInString(doc.Text[:d.Start]) != d.RuneStart || utf8.RuneCountInString(doc.Text[:d.End]) != d.RuneEnd {
+		t.Fatalf("rune offsets mismatch: RuneStart=%d RuneEnd=%d for %q", d.RuneStart, d.RuneEnd, d.Surface)
+	}
 }
 
 func TestNestingEndToEnd(t *testing.T) {
