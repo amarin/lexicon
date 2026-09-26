@@ -172,3 +172,45 @@ func TestNewCopiesTypeProfiles(t *testing.T) {
 		t.Fatalf("host edits leaked: %+v", g.b.typeProfiles)
 	}
 }
+
+// A source whose Version fails keeps its compiled data; the failure is
+// reported on the source, not returned by Refresh or RefreshSource.
+func TestGazetteerRefreshVersionError(t *testing.T) {
+	ctx := context.Background()
+	an := stubAnalyzer{}
+	src := &mutableSource{name: "names"}
+	src.set("1", nil, Entry{Alias: "Иван/иван", Type: "given_name"})
+	g, err := New(ctx, Config{Analyzer: an, Sources: []Source{src}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	s0 := g.Snapshot()
+	boom := errors.New("database is locked")
+	src.setVersionErr(boom)
+	src.set("2", nil, Entry{Alias: "Петров/петров", Type: "surname"})
+
+	reps, err := g.Refresh(ctx)
+	if err != nil || len(reps) != 1 || !errors.Is(reps[0].Err, boom) || reps[0].Version != "1" || reps[0].Aliases != 1 {
+		t.Fatalf("Refresh = %+v, %v", reps, err)
+	}
+	s1 := g.Snapshot()
+	if s1.Version() != s0.Version() || !errors.Is(s1.Reports()[0].Err, boom) {
+		t.Fatalf("snapshot: version %q→%q, reports %+v", s0.Version(), s1.Version(), s1.Reports())
+	}
+	if matchCount(g, an, "Иван/иван") != 2 || matchCount(g, an, "Петров/петров") != 0 {
+		t.Fatal("the previous data must stay in use")
+	}
+
+	rep, err := g.RefreshSource(ctx, "names")
+	if err != nil || !errors.Is(rep.Err, boom) || rep.Version != "1" {
+		t.Fatalf("RefreshSource = %+v, %v", rep, err)
+	}
+
+	src.setVersionErr(nil)
+	if reps, err := g.Refresh(ctx); err != nil || len(reps) != 1 || reps[0].Err != nil || reps[0].Version != "2" {
+		t.Fatalf("recovery: %+v, %v", reps, err)
+	}
+	if matchCount(g, an, "Петров/петров") != 2 {
+		t.Fatal("recovered source must be recompiled")
+	}
+}

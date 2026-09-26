@@ -12,6 +12,7 @@ type mutableSource struct {
 	version string
 	entries []Entry
 	fail    error
+	verErr  error // returned by Version
 }
 
 func (m *mutableSource) Name() string { return m.name }
@@ -19,7 +20,13 @@ func (m *mutableSource) Name() string { return m.name }
 func (m *mutableSource) Version(context.Context) (string, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	return m.version, nil
+	return m.version, m.verErr
+}
+
+func (m *mutableSource) setVersionErr(err error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.verErr = err
 }
 
 func (m *mutableSource) Entries(ctx context.Context, yield func(Entry) error) error {
