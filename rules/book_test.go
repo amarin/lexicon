@@ -74,7 +74,7 @@ func TestKeywordsAndShapes(t *testing.T) {
 		t.Fatal("lemma keyword must match inflected and abbreviated forms")
 	}
 	dotted := term("ул", true, textnorm.TokenWord, textnorm.CaseLower, lexicon.Lemma{Text: "улица", Flags: lexicon.FlagAbbrev})
-	// F1: mimic v0.1's Analyzer.fullTerm, which gives a dotted abbreviation
+	// Mimic v0.1's Analyzer.fullTerm, which gives a dotted abbreviation
 	// Term.Form the trailing dot (e.g. "ул.") — pins keyword.match's
 	// TrimSuffix behaviour against real Form values, not just the helper's.
 	dotted.Form = "ул."

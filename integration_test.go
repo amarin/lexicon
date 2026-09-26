@@ -124,7 +124,7 @@ func BenchmarkRealBaseAnalyzeFull(b *testing.B) {
 }
 
 // TestRealBaseStopWords: one-letter service words carry letter-name Abbr
-// readings in OpenCorpora; they are still stop words (Final Ruling I1).
+// readings in OpenCorpora; they are still stop words.
 func TestRealBaseStopWords(t *testing.T) {
 	_, a := openReal(t)
 
@@ -145,7 +145,7 @@ func TestRealBaseStopWords(t *testing.T) {
 
 // TestRealBaseReformPlace: a pre-reform form whose variant's exact readings
 // are all filtered out by the profile is analysed like the modern form, never
-// by base predictions of the original form (Final Ruling I2).
+// by base predictions of the original form.
 func TestRealBaseReformPlace(t *testing.T) {
 	_, a := openReal(t)
 

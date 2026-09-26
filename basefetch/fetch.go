@@ -69,11 +69,10 @@ func Fetch(dst string) (string, error) {
 // finalize places the compiled dictionary and its manifest sidecar next to
 // dst, given the already-saved dictionary temp file datTmp. It writes the
 // manifest to its own temp file first, removes a stale final manifest, then
-// renames the dictionary tmp into place before the manifest tmp (owner
-// ruling): a resulting .dat without a
-// .meta is acceptable, since the registry falls back to gomorphy BuildInfo,
-// but a final .meta must never exist without its .dat. On any error it
-// removes whichever temp files still exist.
+// renames the dictionary tmp into place before the manifest tmp: a resulting
+// .dat without a .meta is acceptable, since the registry falls back to
+// gomorphy BuildInfo, but a final .meta must never exist without its .dat.
+// On any error it removes whichever temp files still exist.
 func finalize(datTmp, dst, version string) error {
 	metaPath := lexicon.ManifestPath(dst)
 	metaTmp := metaPath + ".tmp"

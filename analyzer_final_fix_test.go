@@ -22,7 +22,7 @@ var abbrFake = fakeDicts{
 }
 
 // TestStopIgnoresAbbr: readings tagged Abbr do not keep a service word out of
-// the stop words (Final Ruling I1).
+// the stop words.
 func TestStopIgnoresAbbr(t *testing.T) {
 	a := NewAnalyzer(abbrFake, textnorm.PreReform, AnalyzerOptions{})
 
@@ -38,7 +38,7 @@ func TestStopIgnoresAbbr(t *testing.T) {
 
 // TestNoPredictionsAfterExact: once the form or a reform variant has exact
 // readings, the profile filter removing them all yields the unknown lemma,
-// never predictions (Final Ruling I2).
+// never predictions.
 func TestNoPredictionsAfterExact(t *testing.T) {
 	a := NewAnalyzer(abbrFake, textnorm.PreReform, AnalyzerOptions{})
 

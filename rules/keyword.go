@@ -9,8 +9,10 @@ import (
 )
 
 // keyword is a compiled "a|b|c" lemma alternation. Alternatives are always
-// normalized with NormalizeWord(PreReform, …) (decision F17), regardless of
-// the rules an analyzer used to produce the Term being matched.
+// normalized with NormalizeWord(PreReform, …), regardless of the rules an
+// analyzer used to produce the Term being matched, so that a rule keyword
+// written with modern spelling still matches pre-reform forms and vice
+// versa.
 type keyword struct {
 	alts   []string
 	dotted bool
