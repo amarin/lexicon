@@ -1,5 +1,7 @@
 package gazetteer
 
+import "slices"
+
 // Snapshot is an immutable set of compiled sources. It is safe for
 // concurrent use; Gazetteer publishes a new one on every successful refresh.
 type Snapshot struct {
@@ -41,6 +43,35 @@ func walkLemma(t *trie, tx *Text, start, p int, node uint32, out []Match) []Matc
 		}
 		out = walkLemma(t, tx, start, p+1, c, out)
 	}
+	return out
+}
+
+// Canonical returns the sorted canonical forms of every alias whose lemma
+// key or surface key (space-joined) equals key.
+func (s *Snapshot) Canonical(key string) []string {
+	return s.unionSorted(func(g *groups) []string { return g.canonicalOf(key) })
+}
+
+// Expand returns the sorted lemma keys of every variant group (aliases of
+// one source sharing a Ref) that contains the lemma key lemma, or nil.
+// Search uses it to expand queries; NER uses the same groups via Canonical.
+func (s *Snapshot) Expand(lemma string) []string {
+	return s.unionSorted(func(g *groups) []string { return g.expand(lemma) })
+}
+
+func (s *Snapshot) unionSorted(get func(*groups) []string) []string {
+	var out []string
+	for _, src := range s.sources {
+		if !src.built {
+			continue
+		}
+		for _, v := range get(src.groups) {
+			if !slices.Contains(out, v) {
+				out = append(out, v)
+			}
+		}
+	}
+	slices.Sort(out)
 	return out
 }
 
