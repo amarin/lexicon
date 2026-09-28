@@ -5,6 +5,8 @@ Notable changes of the project are recorded in this file (format inspired by
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-09-28
+
 ### Changed
 
 - Requires gomorphy v1.3.0 (was v1.2.0). Grammeme checks use gomorphy's
