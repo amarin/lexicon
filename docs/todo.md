@@ -76,11 +76,21 @@ Settled as defaults during v0.2 and open to revisit (see
 
 ## Follow-ups
 
-- [ ] **`hasGrammeme` → gomorphy `HasGrammeme`** (D27) once a gomorphy
-  release ships it (not in 1.2.1). No API change; profile filtering must
-  give the same terms, otherwise ⚠ reindex.
-- [ ] **gomorphy 1.2.1** (documentation release, 2026-09-26): consider
-  raising the requirement from v1.2.0 at the next lexicon release.
+- [ ] **gomorphy 1.3.0** (2026-09-27): raise the requirement from v1.2.0;
+  with it replace `hasGrammeme`/`pos` by gomorphy `HasGrammeme`/`POS`
+  (D27; profile filtering must give the same terms, otherwise ⚠ reindex)
+  and close Q5. Check that Builder/ImportTSV's POS-aware lemma grouping
+  («знать» NOUN vs INFN) does not change terms from host TSVs.
+- [ ] **Agreed normal forms via gomorphy `Inflect`** — see
+  [v0.3 plan Q-v03-10](plans/2026-09-24-v0.3-patterns.md#open-questions):
+  «Калужская губерния» instead of lemma sequences for spans without
+  dictionary hits. Owner decision on API needed (`lexicon.Reading` drops
+  the gomorphy paradigm fields `Forms` needs). ⚠ re-extract. Also usable for
+  the roadmap's morphology overlays (inflected surnames).
+- [ ] **Base from OpenCorpora XML?** gomorphy 1.3.0 builds prediction for
+  `CompileFromXML`, so `basefetch` could drop the pymorphy2 loader (and
+  `logging`/zap). A different dictionary: prediction quality, file size
+  (14.9 MB) and terms change — ⚠ reindex, owner decision.
 - [ ] **Span end over an abbreviation dot** (v0.3): a span ending in a
   dotted abbreviation excludes the dot («Калужской губ»); extend it over
   the dot. Changes span ends: update the golden sets. Scenario 15.
