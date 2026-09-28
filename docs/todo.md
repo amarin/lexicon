@@ -38,11 +38,6 @@ each is marked "Behaviour in 0.1.0" in the scenarios where users see it.
   Decide whether a host needs strict per-profile filtering. Changing it
   changes index terms: ⚠ reindex (analyzer version), owner approval
   needed. Scenario 9.
-- [ ] **Q5. gomorphy string aliasing.** `Registry.Parse` defensively
-  `strings.Clone`s `Reading.Normal`/`Tag` (D22). gomorphy's docs now state
-  that returned strings are independent copies that stay valid after
-  `Close`; verify and drop the clones (a micro-optimisation, no behaviour
-  change).
 - [ ] **Q6. `Reload` cost.** `Reload` reopens every dictionary even when
   its file is unchanged (D23). Reuse dictionaries whose content hash did
   not change, for hosts with many large TSVs reloaded often. Scenario 12.
@@ -76,11 +71,10 @@ Settled as defaults during v0.2 and open to revisit (see
 
 ## Follow-ups
 
-- [ ] **gomorphy 1.3.0** (2026-09-27): raise the requirement from v1.2.0;
-  with it replace `hasGrammeme`/`pos` by gomorphy `HasGrammeme`/`POS`
-  (D27; profile filtering must give the same terms, otherwise ⚠ reindex)
-  and close Q5. Check that Builder/ImportTSV's POS-aware lemma grouping
-  («знать» NOUN vs INFN) does not change terms from host TSVs.
+- [ ] **gomorphy 1.3.0 POS-aware lemma grouping**: Builder/ImportTSV
+  now split homonymous lemmas by part of speech («знать» NOUN vs INFN).
+  Lemma strings are the same, so terms from host TSVs should not change —
+  confirm with a host TSV before the next release.
 - [ ] **Agreed normal forms via gomorphy `Inflect`** — see
   [v0.3 plan Q-v03-10](plans/2026-09-24-v0.3-patterns.md#open-questions):
   «Калужская губерния» instead of lemma sequences for spans without

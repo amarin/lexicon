@@ -1,5 +1,7 @@
 package lexicon
 
+import "github.com/amarin/gomorphy/pkg/morphology"
+
 // Profile selects the dictionaries a field is parsed with — the main defence
 // against homonymy of names and common words («Вера», «Мороз»). Hosts define
 // profiles (genodex: text = all; name = base filtered by Name|Surn|Patr plus
@@ -24,7 +26,7 @@ func (p Profile) keep(r Reading) bool {
 	}
 
 	for _, g := range want {
-		if hasGrammeme(r.Tag, g) {
+		if morphology.HasGrammeme(r.Tag, g) {
 			return true
 		}
 	}

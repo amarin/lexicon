@@ -5,6 +5,15 @@ Notable changes of the project are recorded in this file (format inspired by
 
 ## [Unreleased]
 
+### Changed
+
+- Requires gomorphy v1.3.0 (was v1.2.0). Grammeme checks use gomorphy's
+  `HasGrammeme`/`POS` instead of a local helper (decision D27); dictionary
+  lookups use `ParseAppend` and no longer clone gomorphy's strings, which
+  gomorphy documents as independent copies valid after `Close` (Q5, D22) —
+  fewer allocations per `Registry.Parse`. Lemmas and index terms are
+  unchanged (`analyzerVersion` stays "2", no reindex).
+
 ## [0.2.1] - 2026-09-26
 
 ### Fixed

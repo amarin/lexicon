@@ -69,7 +69,7 @@ The discussion that produced this spec concluded:
 - Go version (owner decision 2026-09-24): policy "current Go minus two minor
   versions", the same as gomorphy (its spec item F) — `go 1.25.0` with
   `toolchain go1.27.1` now; dependency updates must not raise the `go` line.
-- Dependencies: `github.com/amarin/gomorphy` (≥ v1.2.0: `Reading.Predicted`,
+- Dependencies: `github.com/amarin/gomorphy` (≥ v1.3.0: `Reading.Predicted`, `HasGrammeme`/`POS`,
   `OpenBytes`, `ContentHash`, consistent case handling), `golang.org/x/text`
   (`unicode/norm`), `go.yaml.in/yaml/v3` (rule files, package `rules` only).
   Nothing else in library packages; tests use stdlib `testing`.

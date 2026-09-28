@@ -11,7 +11,7 @@ go get github.com/amarin/lexicon
 Требования:
 - Go 1.25 или новее (директива `go` следует правилу «текущий Go минус две
   минорные версии»).
-- [gomorphy](https://github.com/amarin/gomorphy) v1.2.0 или новее —
+- [gomorphy](https://github.com/amarin/gomorphy) v1.3.0 или новее —
   подтягивается `go get`.
 
 Что каждый пакет добавляет в ваш бинарник:

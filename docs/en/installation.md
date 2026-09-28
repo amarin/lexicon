@@ -11,7 +11,7 @@ go get github.com/amarin/lexicon
 Requirements:
 - Go 1.25 or later (the `go` directive follows "current Go minus two minor
   versions").
-- [gomorphy](https://github.com/amarin/gomorphy) v1.2.0 or later — pulled
+- [gomorphy](https://github.com/amarin/gomorphy) v1.3.0 or later — pulled
   in by `go get`.
 
 What each package brings into your binary:

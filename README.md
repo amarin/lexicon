@@ -66,7 +66,7 @@ planned for 0.3 — see the [roadmap](docs/todo.md).
 go get github.com/amarin/lexicon
 ```
 
-lexicon requires [gomorphy](https://github.com/amarin/gomorphy) v1.2.0 or
+lexicon requires [gomorphy](https://github.com/amarin/gomorphy) v1.3.0 or
 later. It ships no dictionary data: fetch the OpenCorpora base dictionary
 with the CLI (network access, ~15 MB, CC BY-SA 4.0 — see Attribution) —
 

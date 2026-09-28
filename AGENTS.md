@@ -91,7 +91,7 @@ Project instructions for AI agents (Codex, Claude, LGTM).
 - `go run ./examples/<name>` — runnable examples (`examples/README.md`).
 
 ## Sibling modules during development
-- gomorphy is used as a released module (currently v1.2.0): `go.mod` requires it
+- gomorphy is used as a released module (currently v1.3.0): `go.mod` requires it
   directly, no `replace` directive, ever.
 - A local, uncommitted `go.work` (`go work init . ../gomorphy` or the matching
   worktree path) is only for trying unreleased gomorphy changes; never commit it —

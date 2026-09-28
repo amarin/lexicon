@@ -6,8 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"slices"
-	"strings"
 	"sync/atomic"
+
+	"github.com/amarin/gomorphy/pkg/morphology"
 )
 
 // snapshot is an immutable set of enabled loaded dictionaries and its version.
@@ -72,10 +73,14 @@ func (s *snapshot) release() error {
 // parse returns exact readings of the dictionaries of kinds (empty = all), or,
 // when there are none, predictions of base dictionaries only. Non-base
 // dictionaries are consulted only for known words (gomorphy IsKnown), so their
-// predictions are never computed. Strings are copied: cached lemmas outlive
-// unmapped dictionaries (D22).
+// predictions are never computed. gomorphy's strings are independent copies
+// that stay valid after Close, so cached lemmas may outlive their
+// dictionaries without cloning (D22, Q5).
 func (s *snapshot) parse(word string, kinds []Kind) []Reading {
-	var exact, predicted []Reading
+	var (
+		exact, predicted []Reading
+		buf              []morphology.Reading
+	)
 
 	for _, x := range s.dicts {
 		k := x.entry.Kind
@@ -87,9 +92,10 @@ func (s *snapshot) parse(word string, kinds []Kind) []Reading {
 			continue
 		}
 
-		for _, rd := range x.d.Parse(word) {
+		buf = x.d.ParseAppend(buf[:0], word)
+		for _, rd := range buf {
 			out := Reading{
-				Normal: strings.Clone(rd.Normal), Tag: strings.Clone(rd.Tag),
+				Normal: rd.Normal, Tag: rd.Tag,
 				Kind: k, Dict: x.entry.Name, Predicted: rd.Predicted,
 			}
 

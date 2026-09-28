@@ -1,5 +1,5 @@
-github.com/amarin/gomorphy v1.2.0 h1:dmyWNm/mKogXHwd048PLSQCM6MjBMkBKu5UVUMZ0VUE=
-github.com/amarin/gomorphy v1.2.0/go.mod h1:IvYbghnlIIm9jHLpC7frmpf/LyUpeGmuJGZ3DNXo0eM=
+github.com/amarin/gomorphy v1.3.0 h1:RAZke1XfnG+1fUjURn6LCcs4A6lLlcbmw6W8cndOrQY=
+github.com/amarin/gomorphy v1.3.0/go.mod h1:IvYbghnlIIm9jHLpC7frmpf/LyUpeGmuJGZ3DNXo0eM=
 github.com/amarin/logging v0.1.2 h1:ACuiS48O6JcN2/5yuIuBDwa4Q4I8LrtatjvR7nosLE0=
 github.com/amarin/logging v0.1.2/go.mod h1:v4ebRLVRdMzYqLYENrdfNDGhAqsqr7otFQt17B7zklQ=
 github.com/imperfectgo/zap-syslog v0.1.1 h1:ukx61DbDK+hvQJ69yVM/r7oYtB8jpsrJxvkiaTszzp4=
