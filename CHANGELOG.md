@@ -13,6 +13,13 @@ Notable changes of the project are recorded in this file (format inspired by
   gomorphy documents as independent copies valid after `Close` (Q5, D22) —
   fewer allocations per `Registry.Parse`. Lemmas and index terms are
   unchanged (`analyzerVersion` stays "2", no reindex).
+- gomorphy 1.3.0's `ImportTSV` groups homonymous lemmas of different parts
+  of speech («знать» NOUN and INFN) into separate lemmas. Host TSV
+  dictionaries give the same lemmas and terms through lexicon as before
+  (checked on such a TSV, with and without a grammeme profile).
+- Docs: `Profile.Grammemes` matches a whole tag token (godoc, `library.md`,
+  scenario 6); agreed normal forms via gomorphy `Inflect` listed as under
+  consideration in "Planned".
 
 ## [0.2.1] - 2026-09-26
 

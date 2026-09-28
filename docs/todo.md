@@ -71,10 +71,6 @@ Settled as defaults during v0.2 and open to revisit (see
 
 ## Follow-ups
 
-- [ ] **gomorphy 1.3.0 POS-aware lemma grouping**: Builder/ImportTSV
-  now split homonymous lemmas by part of speech («знать» NOUN vs INFN).
-  Lemma strings are the same, so terms from host TSVs should not change —
-  confirm with a host TSV before the next release.
 - [ ] **Agreed normal forms via gomorphy `Inflect`** — see
   [v0.3 plan Q-v03-10](plans/2026-09-24-v0.3-patterns.md#open-questions):
   «Калужская губерния» instead of lemma sequences for spans without

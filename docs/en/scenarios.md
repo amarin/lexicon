@@ -217,7 +217,8 @@ village, not an adjective. A single dictionary set answers all of them.
 **How.** A `Profile` is host configuration: `Name` (the cache key, unique
 per `Analyzer`), `Kinds` (dictionary kinds consulted; empty = all) and
 `Grammemes` (per kind, a reading is kept only if its tag has one of the
-listed grammemes). Host kinds (`surname`, `given`, `toponym`, …) are
+listed grammemes as a whole token — gomorphy `HasGrammeme`, so `Surn` does
+not match `Surname`). Host kinds (`surname`, `given`, `toponym`, …) are
 declared in `Options.Kinds`. Readings come in registry order, and a lemma
 keeps the tag of the first reading that gave it.
 
@@ -746,5 +747,9 @@ Not available yet; the design is in the
   actions (relabel, boost, emit a fact) in the rule sets of
   [scenario 16](#16-context-words-triggers-and-document-tags); a span
   ending in an abbreviation extended over its dot.
+- **Under consideration** (not scheduled) — agreed normal forms for spans
+  without dictionary hits: «Калужская губерния» instead of the lemma
+  sequence «калужский губерния», through gomorphy's `Inflect`
+  (gomorphy ≥ 1.3.0).
 
 When they ship, they get scenarios here with their own "Available since".

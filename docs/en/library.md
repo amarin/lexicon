@@ -162,6 +162,9 @@ type Profile struct {
 }
 ```
 
+A grammeme matches a whole tag token (gomorphy `HasGrammeme`; tokens are
+split on `,`, space and `;`, covering OpenCorpora and UniMorph tags).
+
 Profiles are host configuration and are not part of `Analyzer.Version()`.
 
 ### Analyzer

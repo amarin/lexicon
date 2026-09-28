@@ -164,6 +164,9 @@ type Profile struct {
 }
 ```
 
+Граммема совпадает с целым токеном тега (gomorphy `HasGrammeme`; токены
+разделяются `,`, пробелом и `;` — так покрыты теги OpenCorpora и UniMorph).
+
 Профили — конфигурация хоста и в `Analyzer.Version()` не входят.
 
 ### Analyzer

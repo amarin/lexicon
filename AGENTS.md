@@ -60,6 +60,13 @@ Project instructions for AI agents (Codex, Claude, LGTM).
   `ner.extractorVersion` (part of `Result.Version`; hosts recompute stored spans).
   Before the first release of a milestone (while it is "unreleased") the version is
   not bumped: no host stores spans from it.
+- Documentation is updated together with the code, in the same branch and before
+  the merge: every code change (features, fixes, behaviour or API changes,
+  dependency bumps) comes with its CHANGELOG `[Unreleased]` entry and the matching
+  updates to scenarios, `library.md`/`cli.md` (EN + RU), examples, godoc and README.
+  `main` at the moment of the release merge and tag already contains the updated
+  descriptions; the release commit only turns `[Unreleased]` into the version
+  section and bumps version strings — it never catches up on documentation.
 - Documentation follows behaviour, in both `docs/en/` and `docs/ru/`:
   - a new user-visible feature gets a scenario in `scenarios.md` ("Available since"),
     an entry in `library.md`/`cli.md`, and a runnable example (an `// Output:` block

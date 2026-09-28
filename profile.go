@@ -14,7 +14,9 @@ type Profile struct {
 	// Kinds are the dictionaries consulted, in registry order; empty = all.
 	Kinds []Kind
 	// Grammemes keep an exact reading of the kind only if its tag has one of
-	// the listed grammemes; an absent kind or an empty list keeps everything.
+	// the listed grammemes as a whole token (gomorphy HasGrammeme: tokens are
+	// split on ',', ' ' and ';', so "Surn" does not match "Surname"); an
+	// absent kind or an empty list keeps everything.
 	Grammemes map[Kind][]string
 }
 
