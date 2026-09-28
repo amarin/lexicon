@@ -53,6 +53,7 @@ gazetteers and rules are tiny TSVs and YAML strings in code.
 | 18 | [Keep gazetteers current without a restart](#18-keep-gazetteers-current-without-a-restart) | 0.2.0 | [gazetteer](../../examples/gazetteer/main.go) |
 | 19 | [Measure quality on a golden set](#19-measure-quality-on-a-golden-set) | 0.2.0 | [golden](../../examples/golden/main.go) |
 | 20 | [Try NER by hand](#20-try-ner-by-hand) | 0.2.0 | CLI `extract`, `golden` |
+| 21 | [Share dictionaries with the gomorphy CLI](#21-share-dictionaries-with-the-gomorphy-cli) | 0.1.0 | CLI `dicts list`, `gomorphy lookup` |
 | — | [Planned: patterns](#planned-patterns) | 0.3 | — |
 
 ## 1. Compare words across orthographies
@@ -379,6 +380,10 @@ distribute it.
   `basefetch` wrote, parsed with `lexicon.ParseManifest`, into
   `Options.BaseManifest`. It is registered as `base.builtin`; any `base.*`
   file in `Dir` replaces it.
+
+The `gomorphy` CLI is a fourth way (`gomorphy update pymorphy -o
+DIR/base.opencorpora.dat`), but it writes no `.meta`: see
+[scenario 21](#21-share-dictionaries-with-the-gomorphy-cli).
 
 `Entry.Manifest` of the base carries source, version, URL and license:
 show it wherever you attribute data. lexicon itself ships no dictionary
@@ -736,6 +741,70 @@ dictionary kind), for documents and aliases alike, so a golden case with
 another `profile` fails the run; a gazetteer source is named after its
 file's basename without the extension, so `a/x.tsv` and `b/x.txt` fail as
 duplicates.
+
+## 21. Share dictionaries with the gomorphy CLI
+
+**Task.** Use the `gomorphy` command-line tool next to `lexicon`: build or
+refresh the base dictionary with `gomorphy build|update|import|merge`,
+check words with `gomorphy lookup` over the lexicon dictionary directory,
+and know when files from one tool work in the other.
+
+**How.**
+- **One format.** Both tools read and write gomorphy `.dat` (GMOR).
+  `lexicon dicts fetch` (`basefetch.Fetch`) compiles pymorphy2-dicts-ru the
+  same way `gomorphy build pymorphy` does, so either file can be the
+  lexicon base. The reader accepts only its own format version; it has been
+  1 in every gomorphy 1.x release, and an incompatible file is listed by
+  `lexicon dicts list` with a `format: unsupported version` error.
+- **gomorphy → lexicon.** Write straight into the lexicon directory under a
+  `<kind>.<name>.dat` name; gomorphy's default output
+  (`.data/<type>/<type>.dat`) and a bare `pymorphy.dat` are not usable
+  there (an invalid name is listed as broken):
+
+  ```bash
+  gomorphy update pymorphy -o ~/.local/share/lexicon/dicts/base.opencorpora.dat
+  gomorphy import tsv surnames.tsv -o ~/.local/share/lexicon/dicts/surname.parish.dat --source parish
+  ```
+
+  gomorphy writes no `.meta` sidecar. Without one, `Entry.Manifest` comes
+  from the file's BuildInfo — source, version and URL, **no license**; add
+  the `.meta` yourself if you attribute from it. Delete the `.meta` that an
+  earlier `lexicon dicts fetch` left next to the file you replace, or it
+  keeps describing the old data.
+- **lexicon → gomorphy.** `gomorphy -d DIR` (or `GOMORPHY_DICTIONARY=DIR`)
+  loads every `*.dat` directly in `DIR` and ignores `.tsv` and `.meta`.
+  Unlike lexicon ([scenario 10](#10-your-own-dictionaries-files-and-built-ins)),
+  gomorphy predicts from every dictionary, so `gomorphy lookup` over a
+  directory with user `.dat` files may show `(predicted)` readings that
+  lexicon never returns, and it does not see TSV dictionaries at all. Pass
+  only the base (`-d DIR/base.opencorpora.dat`) to compare like with like.
+- **Rebuilds change the content hash.** Different gomorphy versions (the
+  `gomorphy version` of the CLI vs the gomorphy version the lexicon binary
+  was built with) or a newer pymorphy2-dicts-ru can produce a different
+  file from the same command — for example, gomorphy 1.3.0 builds
+  prediction for `opencorpora`/`unimorph` and groups Builder/TSV lemmas by
+  part of speech. A different file means a different `Entry.Hash` and
+  `Registry.Version()`: reindex as in [scenario 13](#13-know-when-to-reindex).
+  The same source built by the same gomorphy version gives the same hash
+  whichever tool built it (the hash ignores build time and other BuildInfo).
+- **Replace files atomically.** gomorphy's `SaveTo` writes a temporary file
+  and renames it, like `dicts fetch`, so `gomorphy build -o` over a file a
+  running lexicon host has memory-mapped is safe; then call
+  `Registry.Reload` ([scenario 12](#12-switch-dictionaries-on-and-off-reload-without-restart)).
+  Do not copy over the file in place.
+- **Tag vocabulary.** Profiles, abbreviations and rule books name
+  OpenCorpora grammemes (`Surn`, `Geox`, `Abbr`, …). A base built with
+  `gomorphy build unimorph` carries UniMorph tags, so those grammeme
+  filters stop matching; keep an OpenCorpora-derived base
+  (`pymorphy`/`opencorpora`).
+- A dictionary merged with `gomorphy merge` is a regular `.dat`: named
+  `base.*` it is the base and predicts; named with another kind it only
+  gives exact readings.
+
+**Example:** CLI `dicts list` after replacing a file (hash, provenance,
+load error); `gomorphy lookup -d DIR/base.opencorpora.dat WORD`.
+
+**Available since:** 0.1.0.
 
 ## Planned: patterns
 

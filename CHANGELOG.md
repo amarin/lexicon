@@ -5,6 +5,15 @@ Notable changes of the project are recorded in this file (format inspired by
 
 ## [Unreleased]
 
+### Documentation
+
+- Scenario 21 (EN + RU): sharing a dictionary directory with the gomorphy
+  CLI — building or refreshing dictionaries with `gomorphy build|update|
+  import|merge`, reading the directory with `gomorphy lookup`, file names,
+  the missing `.meta` sidecar, format-version compatibility, content-hash
+  changes after a rebuild (reindex), atomic replacement and the OpenCorpora
+  tag vocabulary. Linked from scenario 11, `cli.md` and `installation.md`.
+
 ## [0.2.2] - 2026-09-28
 
 ### Changed

@@ -47,6 +47,11 @@ lexicon dicts fetch
 base dictionary pymorphy2-dicts-ru 2.4.417127.4579844 -> /home/me/.local/share/lexicon/dicts/base.opencorpora.dat
 ```
 
+Тот же файл умеет собирать CLI `gomorphy` (`gomorphy update pymorphy -o
+DIR/base.opencorpora.dat`), и он же читает этот каталог (`gomorphy lookup
+-d DIR`); имена, sidecar-файлы, версии и хэши — в
+[сценарии 21](scenarios.md#21-общие-словари-с-cli-gomorphy).
+
 ## `dicts list` — что загружено
 
 По строке на словарь: имя, вид, формат, включён ли, источник (путь к файлу

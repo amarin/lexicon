@@ -50,6 +50,9 @@ binary through `Options.Base`
 ([scenario 11](scenarios.md#11-the-base-dictionary-and-its-attribution)).
 Your own dictionaries are TSV or `.dat` files in the same directory, or
 built-ins ([scenario 10](scenarios.md#10-your-own-dictionaries-files-and-built-ins)).
+The `gomorphy` CLI builds and reads the same `.dat` files; to use both
+tools on one directory see
+[scenario 21](scenarios.md#21-share-dictionaries-with-the-gomorphy-cli).
 
 Gazetteers and rule files for entity extraction are host data too: TSV and
 YAML files or in-memory sources
