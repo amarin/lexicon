@@ -5,6 +5,24 @@ Notable changes of the project are recorded in this file (format inspired by
 
 ## [Unreleased]
 
+### Added
+
+- `lexicon`: `Registry.Inflect(word, kinds, from, want) []string` — forms of
+  a word by grammemes («уезд» → «уезды», «уезда», «уездов») through gomorphy
+  1.3.0's `Inflect`. `from` selects the source reading among homonyms,
+  `want` names the form; exact readings only (predicted ones are not
+  inflected), distinct forms in registry order, ё as the dictionary stores
+  it, nil when nothing matches. `NumeralGrammemes(n)` gives the grammemes of
+  a noun after a count (`nomn sing` / `gent sing` / `gent plur`). Requested
+  by genodex for number-dependent labels. Index terms and spans do not
+  change: `analyzerVersion` and `ner.extractorVersion` stay as they are.
+  Scenario 22 (EN + RU), example `inflect`, `ExampleRegistry_Inflect`,
+  `ExampleNumeralGrammemes`.
+
+### Changed
+
+- Roadmap: this release is 0.3; the patterns milestone moves to 0.4.
+
 ### Documentation
 
 - Scenario 21 (EN + RU): sharing a dictionary directory with the gomorphy

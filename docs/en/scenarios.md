@@ -54,7 +54,8 @@ gazetteers and rules are tiny TSVs and YAML strings in code.
 | 19 | [Measure quality on a golden set](#19-measure-quality-on-a-golden-set) | 0.2.0 | [golden](../../examples/golden/main.go) |
 | 20 | [Try NER by hand](#20-try-ner-by-hand) | 0.2.0 | CLI `extract`, `golden` |
 | 21 | [Share dictionaries with the gomorphy CLI](#21-share-dictionaries-with-the-gomorphy-cli) | 0.1.0 | CLI `dicts list`, `gomorphy lookup` |
-| — | [Planned: patterns](#planned-patterns) | 0.3 | — |
+| 22 | [Word forms and number agreement](#22-word-forms-and-number-agreement) | 0.3 (unreleased) | [inflect](../../examples/inflect/main.go), `ExampleRegistry_Inflect`, `ExampleNumeralGrammemes` |
+| — | [Planned: patterns](#planned-patterns) | 0.4 | — |
 
 ## 1. Compare words across orthographies
 
@@ -545,7 +546,7 @@ host's job.
   them («Большой, Лес» does not match «Большой Лес»); an abbreviation's own
   dot is skipped.
 - A span ending in a dotted abbreviation excludes the dot («Калужской губ»,
-  not «Калужской губ.»); extending the span over the dot is planned for 0.3.
+  not «Калужской губ.»); extending the span over the dot is planned for 0.4.
 - Variant groups (aliases sharing a `Ref`) are not used by extraction: a
   span's `Normal` comes from the `Canonical` fields of its matched entries
   ([scenario 18](#18-keep-gazetteers-current-without-a-restart)).
@@ -806,19 +807,68 @@ load error); `gomorphy lookup -d DIR/base.opencorpora.dat WORD`.
 
 **Available since:** 0.1.0.
 
+## 22. Word forms and number agreement
+
+**Task.** Show a dictionary word in the form the interface needs: a plural
+heading («Уезд» → «Уезды»), a label that agrees with a count («1 уезд»,
+«2 уезда», «5 уездов»), a case form for a generated phrase.
+
+**How.**
+- `Registry.Inflect(word, kinds, from, want)` returns the forms of `word`
+  that have every grammeme of `want` (`plur nomn`, `gent sing`, …).
+  `kinds` selects dictionaries as in `Parse` (empty = all).
+- **Pick the reading with `from`.** A written word is often several words:
+  «село» is a noun and a past form of «сесть», «округ» is also a genitive
+  plural of «округа». `from` lists grammemes the source reading must have —
+  `NOUN nomn sing` for a dictionary headword; empty `from` inflects every
+  reading and returns all their forms.
+- **Take the first form.** The result holds distinct forms: dictionaries in
+  registry order, and within a reading the form closest to the source one
+  first («корпусы» before the informal «корпуса»). Empty `want` returns
+  every form of the lexeme, the source form first.
+- **Counts.** `NumeralGrammemes(n)` gives `want` for a noun after a number in
+  a nominative phrase: 1, 21, 101 → `nomn sing`; 2–4, 22 → `gent sing`;
+  0, 5–20, 11–14, 111 → `gent plur`. Other cases («о пяти уездах») you state
+  yourself.
+- **Letter ё.** «поселок» and «посёлок» find the same word. Forms come back
+  as the dictionary stores them: with ё from the base («посёлки», «сёла»),
+  with е from TSV dictionaries; fold ё yourself if your interface writes е.
+  When the base and a TSV dictionary both know the word you get both
+  spellings — pass `kinds` to choose.
+- Grammemes are those of the answering dictionary — OpenCorpora for the
+  base (`nomn gent datv accs ablt loct`, `sing plur`, `NOUN ADJF`, …).
+
+**Limits.**
+- Only words a dictionary knows are inflected. A word that `Parse` only
+  predicts gives nothing, and so does every word when no base dictionary is
+  loaded: keep a fallback («5 × стан», or the word unchanged).
+- A dictionary does not separate senses: «корпус» gives «корпусы», a
+  military corps needs «корпуса»; «год» after a count gives «годов» before
+  «лет». Keep an override table for such terms, or put them in a `custom`
+  dictionary and ask for it by `kinds`.
+- Multi-word terms («отдельный батальон») are inflected word by word, each
+  with its own `from` and `want`: after 2–4 the adjective takes `gent plur`
+  («2 отдельных батальона»).
+- Forms are lower-case; restore capitals yourself.
+
+**Example:** [inflect](../../examples/inflect/main.go);
+`ExampleRegistry_Inflect`, `ExampleNumeralGrammemes`.
+
+**Available since:** 0.3 (unreleased).
+
 ## Planned: patterns
 
 Not available yet; the design is in the
 [spec](../specs/2026-09-24-lexicon-design.md), the steps in the
 [plan](../plans/2026-09-24-v0.3-patterns.md).
 
-- **0.3** — sequence patterns over spans, lemmas and grammemes with
+- **0.4** — sequence patterns over spans, lemmas and grammemes with
   actions (relabel, boost, emit a fact) in the rule sets of
   [scenario 16](#16-context-words-triggers-and-document-tags); a span
   ending in an abbreviation extended over its dot.
 - **Under consideration** (not scheduled) — agreed normal forms for spans
   without dictionary hits: «Калужская губерния» instead of the lemma
-  sequence «калужский губерния», through gomorphy's `Inflect`
-  (gomorphy ≥ 1.3.0).
+  sequence «калужский губерния», through the inflection of
+  [scenario 22](#22-word-forms-and-number-agreement).
 
 When they ship, they get scenarios here with their own "Available since".
