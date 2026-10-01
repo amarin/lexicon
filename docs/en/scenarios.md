@@ -54,7 +54,7 @@ gazetteers and rules are tiny TSVs and YAML strings in code.
 | 19 | [Measure quality on a golden set](#19-measure-quality-on-a-golden-set) | 0.2.0 | [golden](../../examples/golden/main.go) |
 | 20 | [Try NER by hand](#20-try-ner-by-hand) | 0.2.0 | CLI `extract`, `golden` |
 | 21 | [Share dictionaries with the gomorphy CLI](#21-share-dictionaries-with-the-gomorphy-cli) | 0.1.0 | CLI `dicts list`, `gomorphy lookup` |
-| 22 | [Word forms and number agreement](#22-word-forms-and-number-agreement) | 0.3 (unreleased) | [inflect](../../examples/inflect/main.go), `ExampleRegistry_Inflect`, `ExampleNumeralGrammemes` |
+| 22 | [Word forms and number agreement](#22-word-forms-and-number-agreement) | 0.3.0 | [inflect](../../examples/inflect/main.go), `ExampleRegistry_Inflect`, `ExampleNumeralGrammemes` |
 | — | [Planned: patterns](#planned-patterns) | 0.4 | — |
 
 ## 1. Compare words across orthographies
@@ -854,7 +854,7 @@ heading («Уезд» → «Уезды»), a label that agrees with a count («1
 **Example:** [inflect](../../examples/inflect/main.go);
 `ExampleRegistry_Inflect`, `ExampleNumeralGrammemes`.
 
-**Available since:** 0.3 (unreleased).
+**Available since:** 0.3.0.
 
 ## Planned: patterns
 

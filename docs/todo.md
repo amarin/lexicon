@@ -16,14 +16,10 @@ Mark completed items with `[x]` and move their write-up to
 | v0.1 — text analysis: `textnorm`, `Registry`, `Analyzer`, `basefetch`, CLI `analyze`/`dicts` | 0.1.0, 2026-09-25 | [implementation/v0.1-analysis.md](implementation/v0.1-analysis.md) |
 | User documentation: scenarios, installation, CLI, library (EN + RU), runnable examples, godoc examples | 0.2.0, 2026-09-26 | [en/index.md](en/index.md), [ru/index.md](ru/index.md), [examples/](../examples/README.md) |
 | v0.2 — dictionary NER: `gazetteer`, `rules` (hints, triggers, rule sets by document tags), `ner`, `nertest`, CLI `extract`/`golden`; user docs (scenarios 15–20, EN + RU) and examples `ner`, `gazetteer`, `golden` | 0.2.0, 2026-09-26 | [implementation/v0.2-ner.md](implementation/v0.2-ner.md) |
+| v0.3 — inflection API: `Registry.Inflect`, `NumeralGrammemes` (word forms by grammemes, number agreement; requested by genodex); scenario 22 (EN + RU), example `inflect` | 0.3.0, 2026-10-01 | [implementation/v0.3-inflect.md](implementation/v0.3-inflect.md), [plan](plans/2026-10-01-v0.3-inflect.md) |
 
 ## Next milestones
 
-- [x] **v0.3 — inflection API** (unreleased): `Registry.Inflect`,
-  `NumeralGrammemes` — word forms by grammemes and number agreement,
-  requested by genodex. [Plan](plans/2026-10-01-v0.3-inflect.md),
-  [write-up](implementation/v0.3-inflect.md). Moves to "Done" with the
-  0.3.0 tag.
 - [ ] **v0.4 — patterns** (was v0.3): `rules` sequence patterns and facts
   (rule sets by document tags already ship in 0.2).
   [Plan](plans/2026-09-24-v0.3-patterns.md).

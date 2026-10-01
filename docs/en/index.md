@@ -7,7 +7,7 @@
 - [Usage scenarios: what each feature is for, since which version](scenarios.md)
   — text analysis (0.1.0): scenarios 1–14; dictionary NER (0.2.0):
   [scenarios 15–20](scenarios.md#15-find-entities-with-dictionaries);
-  word forms (0.3, unreleased):
+  word forms (0.3.0):
   [scenario 22](scenarios.md#22-word-forms-and-number-agreement)
 - [Installation](installation.md)
 - [CLI: lexicon](cli.md)

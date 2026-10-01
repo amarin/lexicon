@@ -57,7 +57,7 @@ pkg.go.dev. Все примеры, кроме `base`, работают без с
 | 19 | [Измерить качество на эталонном наборе](#19-измерить-качество-на-эталонном-наборе) | 0.2.0 | [golden](../../examples/golden/main.go) |
 | 20 | [Попробовать NER руками](#20-попробовать-ner-руками) | 0.2.0 | CLI `extract`, `golden` |
 | 21 | [Общие словари с CLI gomorphy](#21-общие-словари-с-cli-gomorphy) | 0.1.0 | CLI `dicts list`, `gomorphy lookup` |
-| 22 | [Формы слова и согласование с числом](#22-формы-слова-и-согласование-с-числом) | 0.3 (не выпущено) | [inflect](../../examples/inflect/main.go), `ExampleRegistry_Inflect`, `ExampleNumeralGrammemes` |
+| 22 | [Формы слова и согласование с числом](#22-формы-слова-и-согласование-с-числом) | 0.3.0 | [inflect](../../examples/inflect/main.go), `ExampleRegistry_Inflect`, `ExampleNumeralGrammemes` |
 | — | [Запланировано: паттерны](#запланировано-паттерны) | 0.4 | — |
 
 ## 1. Сравнивать слова независимо от орфографии
@@ -886,7 +886,7 @@ if v := rep.Check(0.9, 0.9); len(v) > 0 {
 **Пример:** [inflect](../../examples/inflect/main.go);
 `ExampleRegistry_Inflect`, `ExampleNumeralGrammemes`.
 
-**Доступно с:** 0.3 (не выпущено).
+**Доступно с:** 0.3.0.
 
 ## Запланировано: паттерны
 

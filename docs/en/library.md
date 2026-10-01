@@ -118,7 +118,7 @@ parsing.
 | Method | |
 |---|---|
 | `Parse(word, kinds) []Reading` | readings from enabled dictionaries of `kinds` (empty = all), in registry order: exact ones, or — when there are none — predictions of `base` dictionaries |
-| `Inflect(word, kinds, from, want) []string` | *(0.3, unreleased)* forms of `word` having every grammeme of `want`, from exact readings that have every grammeme of `from` (empty = any), in dictionaries of `kinds` (empty = all): distinct lower-case forms as stored (ё kept by the base), registry order, the closest form first; empty `want` = every form. Predicted readings are not inflected; nil when nothing matches or after `Close` |
+| `Inflect(word, kinds, from, want) []string` | *(0.3.0)* forms of `word` having every grammeme of `want`, from exact readings that have every grammeme of `from` (empty = any), in dictionaries of `kinds` (empty = all): distinct lower-case forms as stored (ё kept by the base), registry order, the closest form first; empty `want` = every form. Predicted readings are not inflected; nil when nothing matches or after `Close` |
 | `List() []Entry` | copies of all entries, broken ones included |
 | `Summary() string` | one line for host logs: `dictionaries: N of M enabled; base: yes; broken: K` |
 | `Version() string` | identifies the enabled set and its contents |
@@ -153,7 +153,7 @@ type StateStore interface {
 sidecar (`key: value` lines, `#` comments, case-insensitive keys);
 `Manifest.WriteTo` writes one; `Manifest.String()` is a one-line summary.
 
-`NumeralGrammemes(n) []string` *(0.3, unreleased)* — the grammemes of a noun
+`NumeralGrammemes(n) []string` *(0.3.0)* — the grammemes of a noun
 after the count `n` in a nominative phrase, for `Inflect`'s `want`: 1, 21 →
 `nomn sing`; 2–4, 22 → `gent sing`; 0, 5–20, 11–14 → `gent plur`
 ([scenario 22](scenarios.md#22-word-forms-and-number-agreement)).

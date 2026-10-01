@@ -5,6 +5,8 @@ Notable changes of the project are recorded in this file (format inspired by
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-01
+
 ### Added
 
 - `lexicon`: `Registry.Inflect(word, kinds, from, want) []string` — forms of

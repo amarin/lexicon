@@ -19,7 +19,7 @@ pkg.go.dev).
 | [abbrev](abbrev/main.go) | an `abbrev` dictionary: «с.», «у.», «кр-нин» | 9 | no |
 | [registry](registry/main.go) | a dictionary directory: `.meta`, broken files, `SetEnabled`, `Reload`, `Version` | 10, 12, 13 | no — files written to a temp dir |
 | [embed](embed/main.go) | a built-in dictionary via `//go:embed`, overridden by a file | 10 | no — `abbrev.records.tsv` is committed |
-| [inflect](inflect/main.go) | *(0.3, unreleased)* `Registry.Inflect` and `NumeralGrammemes`: plural headings, «1 уезд, 2 уезда, 5 уездов», a fallback for an unknown word | 22 | no — a tiny base TSV in code |
+| [inflect](inflect/main.go) | *(0.3.0)* `Registry.Inflect` and `NumeralGrammemes`: plural headings, «1 уезд, 2 уезда, 5 уездов», a fallback for an unknown word | 22 | no — a tiny base TSV in code |
 | [ner](ner/main.go) | *(0.2.0)* gazetteer + rules → spans: hints, a trigger candidate, a rule set by document tag, `Explain` | 15, 16, 17 | no — morphology, gazetteer and rules in code |
 | [gazetteer](gazetteer/main.go) | *(0.2.0)* sources, the build report, `Refresh` of a changed host source, raw matches, variant groups | 15, 18 | no |
 | [golden](golden/main.go) | *(0.2.0)* `nertest`: strict/partial precision and recall, `Check`, `WithTags` from case context | 19 | no |

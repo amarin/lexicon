@@ -17,7 +17,7 @@ a document:
   profile for each field (names, places, general vocabulary); pre-reform
   adjective endings and abbreviations of records; search-index terms,
   search-query parsing and per-token markup from one analyzer; word forms
-  by grammemes and agreement with a count («5 уездов») *(0.3, unreleased)*.
+  by grammemes and agreement with a count («5 уездов») *(0.3.0)*.
 - **Dictionary NER** *(0.2.0)*. Multi-word aliases matched by
   lemmas or surface forms, variant groups, abbreviation hints, trigger
   words, and rule sets switched on by document tags; pattern rules
@@ -61,7 +61,7 @@ and the `lexicon extract`/`lexicon golden` CLI commands, with rule sets
 scoped by document tags (`When`, `Book.Active`). Pattern-based facts are
 planned for 0.4 — see the [roadmap](docs/todo.md).
 
-0.3 (unreleased): word forms by grammemes — `Registry.Inflect` and
+0.3.0 is released: word forms by grammemes — `Registry.Inflect` and
 `NumeralGrammemes`.
 
 ## Installation
