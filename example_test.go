@@ -156,3 +156,16 @@ func ExampleParseManifest() {
 	fmt.Println(m)
 	// Output: OpenCorpora; 2.4; license CC BY-SA 4.0
 }
+
+// The grammemes of a noun after a count; pass them to Registry.Inflect.
+func ExampleNumeralGrammemes() {
+	for _, n := range []int{1, 2, 5, 11, 21} {
+		fmt.Println(n, lexicon.NumeralGrammemes(n))
+	}
+	// Output:
+	// 1 [nomn sing]
+	// 2 [gent sing]
+	// 5 [gent plur]
+	// 11 [gent plur]
+	// 21 [nomn sing]
+}
