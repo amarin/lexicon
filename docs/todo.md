@@ -77,6 +77,53 @@ Settled as defaults during v0.2 and open to revisit (see
   dictionary hits. Owner decision on API needed (`lexicon.Reading` drops
   the gomorphy paradigm fields `Forms` needs). ⚠ re-extract. Also usable for
   the roadmap's morphology overlays (inflected surnames).
+- [ ] **Inflection API for hosts** (word forms by grammemes; requested by
+  genodex, 2026-10-01). gomorphy 1.3.0 has `Dictionary.Forms`/`Inflect`
+  (and the `MultiDictionary` equivalents), but lexicon exposes neither, so a
+  host cannot ask "plural nominative of «уезд»". genodex needs it for
+  number-dependent labels («Уезд» → «Уезды», «2 уезда», «5 уездов»); the
+  same API serves the agreed normal forms above. Needed changes:
+  - **Exported API** (owner decision — the choice left open in Q-v03-10):
+    either a registry method, e.g.
+    `Registry.Inflect(word string, kinds []Kind, from, want []string) []string`
+    (`from` — grammemes the source reading must have, e.g. `NOUN nomn sing`;
+    `want` — grammemes of the wanted form, e.g. `plur nomn`), or
+    `Reading`/`Term` keeping the gomorphy reading (`Word`, `Para`, `Form`,
+    `Shard`) plus `Registry.Forms(Reading)`. Today `lexicon.Reading` drops
+    those fields and `Registry.Parse` is the only lookup, so neither works.
+    The method variant keeps gomorphy types out of the public API and runs
+    under the registry's snapshot reference like `Parse`.
+  - **Reading selection**: a word has several readings («уезд» — 2, «округ»
+    — 4: cases, homonyms). Define which one is inflected: filter by `from`,
+    exact before predicted, predicted readings off by default (their forms
+    are generated from a guessed paradigm), deterministic order across
+    dictionaries of the given kinds; return every distinct form when
+    readings disagree.
+  - **Number agreement helper**: the grammemes for a count — 1 → `nomn
+    sing`, 2–4 → `gent sing`, 5–20 → `gent plur`, by the last two digits
+    (11–14 → `gent plur`) — as pymorphy2's `make_agree_with_number`.
+    Neither gomorphy nor lexicon has it.
+  - **Letter ё**: base-dictionary forms come back with ё («сёла»,
+    «посёлки»), TSV dictionaries are stored with е (D28) and analysed forms
+    arrive without ё. Document what the caller gets; a word given as
+    «поселок» must still inflect.
+  - **No dictionary**: without a base dictionary (genodex's default build
+    embeds none) the result is empty, not an error; document it so hosts
+    keep a fallback.
+  - **Known limits to document**: a dictionary does not separate senses —
+    «корпус» gives «корпусы», a military corps needs «корпуса» — so hosts
+    keep an override table for domain terms; multi-word terms («отдельный
+    батальон») need the head-word/agreement rule of Q-v03-10.
+  - **Checked on 2026-10-01** with gomorphy 1.3.0 `Inflect` on its pymorphy
+    and OpenCorpora `.dat` files, 34 nouns (genodex division and military
+    unit type names): `plur nomn`, `sing gent`, `plur gent` are correct for
+    all but «корпус» (sense, above); on the OpenCorpora file «край» has no
+    `sing gent` form through `Inflect` — check before relying on that base
+    (see "Base from OpenCorpora XML?").
+  - **Release**: new exported API (owner approval), CHANGELOG, a scenario,
+    `library.md` (EN + RU), a runnable example and godoc. Index terms and
+    spans do not change — no `analyzerVersion`/`extractorVersion` bump.
+    genodex then moves from lexicon v0.2.1 (gomorphy 1.2.0) to that release.
 - [ ] **Base from OpenCorpora XML?** gomorphy 1.3.0 builds prediction for
   `CompileFromXML`, so `basefetch` could drop the pymorphy2 loader (and
   `logging`/zap). A different dictionary: prediction quality, file size
