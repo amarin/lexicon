@@ -218,3 +218,75 @@ func TestRealBaseReformPlace(t *testing.T) {
 		t.Fatalf("Боровскаго → %q, Боровского → %q", old, modern)
 	}
 }
+
+// TestRealBaseInflect: genodex's number-dependent labels — administrative
+// division and military unit type names in the three forms a count needs.
+func TestRealBaseInflect(t *testing.T) {
+	r, _ := openReal(t)
+
+	noun := []string{"NOUN", "nomn", "sing"}
+
+	// word, plur nomn, gent sing, gent plur — the first form returned.
+	cases := [][4]string{
+		{"уезд", "уезды", "уезда", "уездов"},
+		{"губерния", "губернии", "губернии", "губерний"},
+		{"волость", "волости", "волости", "волостей"},
+		{"округ", "округа", "округа", "округов"},
+		{"край", "края", "края", "краёв"},
+		{"область", "области", "области", "областей"},
+		{"район", "районы", "района", "районов"},
+		{"село", "сёла", "села", "сёл"},
+		{"деревня", "деревни", "деревни", "деревень"},
+		{"город", "города", "города", "городов"},
+		{"посёлок", "посёлки", "посёлка", "посёлков"},
+		{"поселок", "посёлки", "посёлка", "посёлков"},
+		{"стан", "станы", "стана", "станов"},
+		{"хутор", "хутора", "хутора", "хуторов"},
+		{"полк", "полки", "полка", "полков"},
+		{"батальон", "батальоны", "батальона", "батальонов"},
+		{"дивизия", "дивизии", "дивизии", "дивизий"},
+		{"бригада", "бригады", "бригады", "бригад"},
+		{"рота", "роты", "роты", "рот"},
+		{"эскадрон", "эскадроны", "эскадрона", "эскадронов"},
+		{"батарея", "батареи", "батареи", "батарей"},
+		{"армия", "армии", "армии", "армий"},
+		{"фронт", "фронты", "фронта", "фронтов"},
+	}
+
+	for _, c := range cases {
+		for i, n := range []int{0, 2, 5} { // 0 stands for the plain plural
+			want := NumeralGrammemes(n)
+			if n == 0 {
+				want = []string{"plur", "nomn"}
+			}
+
+			got := r.Inflect(c[0], nil, noun, want)
+			if len(got) == 0 || got[0] != c[i+1] {
+				t.Errorf("Inflect(%s, %v) = %v, want first %s", c[0], want, got, c[i+1])
+			}
+		}
+	}
+
+	// Known limits: the dictionary does not separate senses.
+	if got := strings.Join(r.Inflect("корпус", nil, noun, []string{"plur", "nomn"}), "|"); got != "корпусы|корпуса" {
+		t.Errorf("корпус plur nomn = %s", got)
+	}
+
+	if got := r.Inflect("год", nil, noun, NumeralGrammemes(5)); len(got) < 2 || !slices.Equal(got[:2], []string{"годов", "лет"}) {
+		t.Errorf("год gent plur = %v", got)
+	}
+
+	// A word known only through prediction is parsed but not inflected.
+	if len(r.Parse("бдыщевость", nil)) == 0 {
+		t.Error("бдыщевость: no predicted readings")
+	}
+
+	if got := r.Inflect("бдыщевость", nil, nil, []string{"plur", "nomn"}); got != nil {
+		t.Errorf("predicted word inflected: %v", got)
+	}
+
+	// An adjective agrees by the same call.
+	if got := r.Inflect("отдельный", nil, []string{"ADJF", "nomn", "masc"}, []string{"gent", "plur"}); len(got) == 0 || got[0] != "отдельных" {
+		t.Errorf("отдельный gent plur = %v", got)
+	}
+}
