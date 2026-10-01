@@ -518,7 +518,10 @@ source under 1 s; zero allocations per token in the matcher walk.
     hot reload), `basefetch`, CLI `analyze`/`dicts`. Unblocks genodex search P1.
   - **v0.2** — `gazetteer`, `rules` (hints, triggers), `ner` resolution, CLI
     `extract`, `nertest`/`golden`.
-  - **v0.3** — `rules` patterns + facts, rule sets by document tags.
+  - **v0.3** — inflection API: `Registry.Inflect`, `NumeralGrammemes`
+    (added 2026-10-01 at genodex's request, not in the original design).
+  - **v0.4** (originally v0.3) — `rules` patterns + facts, rule sets by
+    document tags.
 - Development against local gomorphy via a local, uncommitted `go.work`
   (`use . ../gomorphy` or the matching worktree path; `go.work` and
   `go.work.sum` in `.gitignore`), never `replace` in `go.mod` (owner decision
@@ -588,10 +591,10 @@ from the sections above, **these win**:
   `rules.LoadFile(path) (File, error)` → `rules.Compile(files...)
   (*Book, error)`; `Book.Active(tags)` selects rule sets. Source positions
   (owner decision 2026-09-24): loading records the file name and the line of
-  every rule set, hint, trigger (v0.2), pattern and element (v0.3) in
+  every rule set, hint, trigger (v0.2), pattern and element (v0.4) in
   unexported fields (JSON input too); load errors read `<file>:<line>:
   <message>`, every `Compile`/validation error `<file>:<line>: <set>/<rule>:
-  <message>` (`Load(r)` names the input `<input>`). In v0.3 `Element.Repeat`
+  <message>` (`Load(r)` names the input `<input>`). In v0.4 `Element.Repeat`
   is a typed `Repeat` (`""`, `"?"`, `"*"`, `"+"`); any other value fails at
   load with its line. Hints and triggers get
   `Absorb` (the span includes the keyword, e.g. «дер.»). `Blocked` vetoes its
@@ -605,7 +608,7 @@ from the sections above, **these win**:
   `Span.Alternatives` (owner decision 2026-09-24; v0.2 decision D14).
   `Result.Version` also hashes weights, nesting and min-runes (alternatives add
   no configuration, so they do not change it).
-- v0.3 patterns run over the pre-resolution candidate lattice, per sentence,
+- v0.4 patterns run over the pre-resolution candidate lattice, per sentence,
   leftmost-first, non-overlapping; `Relabel` on a token capture creates a
   candidate span (so «N лет» can be a fact argument); `Fact` gains `Rule`.
   `Relabel` of a span (owner decision 2026-09-24): an existing candidate of the

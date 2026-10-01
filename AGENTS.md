@@ -15,7 +15,8 @@ Project instructions for AI agents (Codex, Claude, LGTM).
   `textnorm/example_test.go`.
 - Packages: `textnorm` (orthography rule sets, tokenizer with byte + rune offsets,
   pre-reform endings; no dictionaries), root package `lexicon` (dictionary registry,
-  profiles, `Analyzer`), `basefetch` (optional: download and compile the OpenCorpora
+  profiles, `Analyzer`; from v0.3 word forms by grammemes — `Registry.Inflect`,
+  `NumeralGrammemes`), `basefetch` (optional: download and compile the OpenCorpora
   base dictionary; imports gomorphy's pymorphy loader), `cmd/lexicon` (CLI). From
   v0.2: `gazetteer` (TSV/in-memory alias sources compiled into versioned trie
   snapshots, zero-allocation matching), `rules` (YAML/JSON rule books: hints,
