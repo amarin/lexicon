@@ -114,3 +114,56 @@ func (s *snapshot) parse(word string, kinds []Kind) []Reading {
 
 	return predicted
 }
+
+// inflect returns the distinct forms, having every grammeme of want, of the
+// exact readings of word that have every grammeme of from, in dictionaries
+// of kinds (empty = all): dictionaries in order, readings in dictionary
+// order, forms in gomorphy's order (closest to the reading first). Predicted
+// readings are never inflected — their forms would come from a guessed
+// paradigm. A dictionary that does not know word is asked again with ё
+// folded to е: TSV dictionaries are stored with е (D28).
+func (s *snapshot) inflect(word string, kinds []Kind, from, want []string) []string {
+	var (
+		out []string
+		buf []morphology.Reading
+	)
+
+	for _, x := range s.dicts {
+		if len(kinds) > 0 && !slices.Contains(kinds, x.entry.Kind) {
+			continue
+		}
+
+		w := word
+		if !x.d.IsKnown(w) {
+			if w = yoReplacer.Replace(word); w == word || !x.d.IsKnown(w) {
+				continue
+			}
+		}
+
+		buf = x.d.ParseAppend(buf[:0], w)
+		for _, rd := range buf {
+			if rd.Predicted || !hasGrammemes(rd.Tag, from) {
+				continue
+			}
+
+			for _, f := range x.d.Inflect(rd, want...) {
+				if !slices.Contains(out, f.Word) {
+					out = append(out, f.Word)
+				}
+			}
+		}
+	}
+
+	return out
+}
+
+// hasGrammemes reports whether tag has every grammeme of gs.
+func hasGrammemes(tag string, gs []string) bool {
+	for _, g := range gs {
+		if !morphology.HasGrammeme(tag, g) {
+			return false
+		}
+	}
+
+	return true
+}

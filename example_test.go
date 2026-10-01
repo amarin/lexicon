@@ -169,3 +169,19 @@ func ExampleNumeralGrammemes() {
 	// 11 [gent plur]
 	// 21 [nomn sing]
 }
+
+// Ask the registry for a form by grammemes: the genitive of «кот». The
+// second argument selects dictionary kinds, the third filters the source
+// reading, the fourth names the wanted form.
+func ExampleRegistry_Inflect() {
+	reg := exampleRegistry()
+	defer func() { _ = reg.Close() }()
+
+	fmt.Println(reg.Inflect("кот", nil, []string{"NOUN", "nomn"}, []string{"gent"}))
+	fmt.Println(reg.Inflect("кот", nil, nil, nil))
+	fmt.Println(reg.Inflect("пёс", nil, nil, []string{"gent"}) == nil)
+	// Output:
+	// [кота]
+	// [кот кота]
+	// true
+}

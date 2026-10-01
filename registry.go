@@ -80,6 +80,29 @@ func (r *Registry) Parse(word string, kinds []Kind) []Reading {
 	return s.parse(word, kinds)
 }
 
+// Inflect returns forms of word by grammemes: «уезд» with want "plur nomn"
+// gives «уезды». kinds selects dictionaries as in Parse (empty = all). from
+// lists grammemes the source reading must have ("NOUN nomn sing"; empty =
+// any reading) — a word may be several words («село» is a noun and a verb
+// form). want lists grammemes of the wanted form; empty want gives every
+// form of the lexeme, the source form first. NumeralGrammemes gives want for
+// a count.
+//
+// Only exact dictionary readings are inflected, never predicted ones. The
+// result holds distinct lower-case forms as the dictionaries store them
+// (the base keeps ё: «посёлки»; TSV dictionaries are stored with е), in
+// registry order, the form closest to the source reading first within a
+// reading — take the first one. It is nil when no dictionary has the word,
+// no reading has from or no form has want; hosts without a base dictionary
+// keep a fallback. A dictionary does not separate senses («корпус» gives
+// «корпусы» before «корпуса»): keep overrides for domain terms.
+func (r *Registry) Inflect(word string, kinds []Kind, from, want []string) []string {
+	s := r.acquire()
+	defer s.release()
+
+	return s.inflect(word, kinds, from, want)
+}
+
 // Version identifies the set of enabled dictionaries and their contents.
 func (r *Registry) Version() string { return r.cur.Load().version }
 
@@ -121,7 +144,7 @@ func (r *Registry) Summary() string {
 }
 
 // Close releases the dictionaries once in-flight Parse calls finish. After
-// Close, Parse returns nil, List is empty; Close is idempotent.
+// Close, Parse and Inflect return nil, List is empty; Close is idempotent.
 func (r *Registry) Close() error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
