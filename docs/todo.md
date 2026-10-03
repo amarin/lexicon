@@ -24,6 +24,49 @@ Mark completed items with `[x]` and move their write-up to
   (rule sets by document tags already ship in 0.2).
   [Plan](plans/2026-09-24-v0.3-patterns.md).
 
+  **Blocks genodex E9** (mention suggestions; owner decision 2026-10-04):
+  assembling a person's name from adjacent name words is pattern work in
+  lexicon, not host code. The plan predates this requirement — review it
+  against the list below before execution. Observed on a 1905 metric
+  record in pre-reform spelling through genodex `extract` (0.3.0): places
+  and plain «given patronymic surname» sequences come out right as
+  separate word spans; the cases below do not.
+
+  - [ ] **Person as one unit.** A sequence of name words (given,
+    given + patronymic, given + surname, given + patronymic + surname,
+    surname + given + patronymic) must reach the host as one range with
+    its parts by role, each part keeping its `Refs`. Decide the carrier:
+    an `Emit`ted fact (`person` with args `given`/`patronymic`/`surname`
+    — the plan as written, the host derives the range from the args) or
+    a composite span of a new type nested over the part spans (needs a
+    group-role relabel, P6, and a `Nesting` pair per part type). The host
+    needs the whole range for the mention and the parts for matching
+    against its persons.
+  - [ ] **Unknown word inside a name.** A capitalised word with no
+    dictionary hit between or right after name words is a name part
+    («Анна Михаилова Кузнецова» with «Михаилова» absent from the
+    patronymic dictionary): token-role relabel (P6) to a `Candidate`
+    patronymic or surname. Needs a selector for capitalisation — the
+    plan has none (selectors: span type, lemma, grammemes, token kind).
+  - [ ] **Surname that is also a place name.** After given + patronymic,
+    a word that won resolution as `settlement` without a settlement
+    keyword before it («Анна Петрова Головина», the gazetteer has the
+    village «Головино») is a surname: relabel, the settlement reading
+    stays in `Alternatives`.
+  - [ ] **Given-name reading in the patronymic slot.** «Алексей Степанов
+    Сидоров» where «Степанов» resolved as a form of the given name
+    «Степан»: the second word of a name sequence is a patronymic.
+  - [ ] **Several persons in one sentence.** Metric records list parents
+    and godparents in one sentence, sometimes back to back with no
+    separator. Every person must match on its own — revisit Q-v03-2
+    (greedy `any*` binds the last name pair) and Q-v03-8 (repeated role
+    captures after «восприемники:»).
+  - [ ] **Golden cases** for each item above, in pre-reform and modern
+    spelling (synthetic fixtures; the real texts stay outside the repo).
+
+  Relations and `age` facts ship in the same milestone as planned but do
+  not block E9.
+
 Each milestone also updates the user documentation: a scenario per new
 feature in `docs/en/scenarios.md` and `docs/ru/scenarios.md` (with its
 "Available since"), `library.md`/`cli.md` in both languages, a runnable
