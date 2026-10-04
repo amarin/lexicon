@@ -201,7 +201,7 @@ printf 'Лягушкино\nиз Боровского уезда\n' | lexicon ex
 {"doc":2,"start":5,"end":36,"rune_start":3,"rune_end":19,"type":"division","surface":"Боровского уезда","normal":["Боровский"],"refs":["d2"],"attrs":{"level":"uezd"},"score":6.5}
 ```
 
-Facts *(0.4, unreleased)*: after the spans of a document, one table row
+Facts *(0.4.0)*: after the spans of a document, one table row
 per fact — the document number, the type column `fact`, the fact kind in
 the surface column and `role=«surface»` pairs sorted by role in the normal
 column; with `--format jsonl` one line per fact,
@@ -272,4 +272,4 @@ map it to tags; use `nertest.WithTags` from Go), and a case with a
 
 - 0.1.0 — `analyze`, `dicts list`, `dicts fetch`.
 - 0.2.0 — `extract`, `golden`.
-- 0.4 (unreleased): extract prints facts; spans ending in a dotted abbreviation include the dot ⚠ re-extract.
+- 0.4.0: extract prints facts; spans ending in a dotted abbreviation include the dot ⚠ re-extract.

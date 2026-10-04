@@ -55,9 +55,9 @@ gazetteers and rules are tiny TSVs and YAML strings in code.
 | 20 | [Try NER by hand](#20-try-ner-by-hand) | 0.2.0 | CLI `extract`, `golden` |
 | 21 | [Share dictionaries with the gomorphy CLI](#21-share-dictionaries-with-the-gomorphy-cli) | 0.1.0 | CLI `dicts list`, `gomorphy lookup` |
 | 22 | [Word forms and number agreement](#22-word-forms-and-number-agreement) | 0.3.0 | [inflect](../../examples/inflect/main.go), `ExampleRegistry_Inflect`, `ExampleNumeralGrammemes` |
-| 23 | [Sequence patterns](#23-sequence-patterns) | 0.4 (unreleased) | [persons](../../examples/persons/main.go) |
-| 24 | [A person as one span](#24-a-person-as-one-span) | 0.4 (unreleased) | [persons](../../examples/persons/main.go) |
-| 25 | [Facts from patterns](#25-facts-from-patterns) | 0.4 (unreleased) | [persons](../../examples/persons/main.go) |
+| 23 | [Sequence patterns](#23-sequence-patterns) | 0.4.0 | [persons](../../examples/persons/main.go) |
+| 24 | [A person as one span](#24-a-person-as-one-span) | 0.4.0 | [persons](../../examples/persons/main.go) |
+| 25 | [Facts from patterns](#25-facts-from-patterns) | 0.4.0 | [persons](../../examples/persons/main.go) |
 | — | [Planned](#planned) | — | — |
 
 ## 1. Compare words across orthographies
@@ -462,7 +462,7 @@ page names the part it bumps.
 - 0.2.1 — extractor version `ner-2`: the `abbrev` flag fix
   ([scenario 9](#9-abbreviations-of-records)) changes span flags and
   sentence ends (⚠ re-extract).
-- 0.4 (unreleased) — extractor version `ner-3`: a span ending in a dotted
+- 0.4.0 — extractor version `ner-3`: a span ending in a dotted
   abbreviation includes the dot ([scenario 15](#15-find-entities-with-dictionaries);
   ⚠ re-extract).
 
@@ -641,7 +641,7 @@ no two output spans cross, and a span may lie inside another only for an
 outer/inner type pair listed in `Config.Nesting` (the inner one gets the
 `Nested` flag). A span created by a pattern `label` may hold an allowed span
 on its own whole range (a one-word person and its surname); two dictionary
-spans on one range still compete. *(0.4, unreleased)* A candidate's score is a weighted sum
+spans on one range still compete. *(0.4.0)* A candidate's score is a weighted sum
 (`ner.Weights`, `DefaultWeights()` when zero): per word the origin weight
 (surface 3, lemma 2, trigger 1) plus the type weight, a length bonus per
 word beyond the first (0.5), the hint and trigger evidence, minus the
@@ -921,7 +921,7 @@ the place: `file.yaml:12: persons/pattern "person": …`.
 **Example:** [persons](../../examples/persons/main.go); CLI `extract
 --rules`.
 
-**Available since:** 0.4 (unreleased).
+**Available since:** 0.4.0.
 
 **Behaviour in 0.4:**
 - A repeated `role` keeps its last repetition; there are no lazy
@@ -986,7 +986,7 @@ A complete rule set with golden cases:
 **Example:** [persons](../../examples/persons/main.go); CLI `extract --ortho prereform
 --rules persons.yaml --nest 'person>given_name' --nest 'person>surname'`.
 
-**Available since:** 0.4 (unreleased).
+**Available since:** 0.4.0.
 
 **Behaviour in 0.4:**
 - Whether one name word is a person is your rule set's choice: write a
@@ -1001,7 +1001,7 @@ A complete rule set with golden cases:
   `Alternatives` (a surname that is also a village).
 - The person's `Normal` joins the canonical forms of its dictionary parts
   with the lower-case lemmas of the parts a pattern labelled or relabelled
-  and of the words outside parts («Анна Петров головина»). Agreed forms
+  and of the words outside parts («Анна Петров головин»). Agreed forms
   are an open question ([todo](../todo.md), Q-v03-10).
 - A part that requires context (`requires_context`: a surname that is also
   a common word, «Мороз») is kept when a pattern assembles a person over
@@ -1044,7 +1044,7 @@ its spans did not make it to the output (lost an overlap, filtered by
 **Example:** [persons](../../examples/persons/main.go); CLI `extract`
 prints fact rows.
 
-**Available since:** 0.4 (unreleased).
+**Available since:** 0.4.0.
 
 **Behaviour in 0.4:**
 - A list after one keyword («восприемники: …») yields one fact per match,

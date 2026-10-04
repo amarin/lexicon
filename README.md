@@ -22,7 +22,7 @@ a document:
   lemmas or surface forms, variant groups, abbreviation hints, trigger
   words, and rule sets switched on by document tags; sequence patterns that
   retype, create and group spans — a person as one span over its name parts —
-  and emit facts *(0.4, unreleased)*. Overlapping matches are resolved, and every span can
+  and emit facts *(0.4.0)*. Overlapping matches are resolved, and every span can
   explain why it was produced. A golden-set harness measures precision and
   recall per entity type.
 - **Dictionaries as data.** Morphology dictionaries are gomorphy `.dat` or
@@ -59,11 +59,15 @@ tokenization, the dictionary `Registry`, and the `Analyzer` (`ModeIndex`,
 
 0.2.0 is released: dictionary NER — `gazetteer`, `rules`, `ner`, `nertest`,
 and the `lexicon extract`/`lexicon golden` CLI commands, with rule sets
-scoped by document tags (`When`, `Book.Active`). Patterns and facts (0.4) are
-implemented and not yet released — see the [roadmap](docs/todo.md).
+scoped by document tags (`When`, `Book.Active`).
 
 0.3.0 is released: word forms by grammemes — `Registry.Inflect` and
 `NumeralGrammemes`.
+
+0.4.0 is released: sequence patterns in rule sets — a person as one span
+over its name parts — and facts (`Result.Facts`); a span ending in a dotted
+abbreviation includes the dot (hosts re-extract). What is next: the
+[roadmap](docs/todo.md).
 
 ## Installation
 

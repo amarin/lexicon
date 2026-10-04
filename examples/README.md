@@ -23,7 +23,7 @@ pkg.go.dev).
 | [ner](ner/main.go) | *(0.2.0)* gazetteer + rules → spans: hints, a trigger candidate, a rule set by document tag, `Explain` | 15, 16, 17 | no — morphology, gazetteer and rules in code |
 | [gazetteer](gazetteer/main.go) | *(0.2.0)* sources, the build report, `Refresh` of a changed host source, raw matches, variant groups | 15, 18 | no |
 | [golden](golden/main.go) | *(0.2.0)* `nertest`: strict/partial precision and recall, `Check`, `WithTags` from case context | 19 | no |
-| [persons](persons/main.go) | *(0.4, unreleased)* rule patterns: a person span over its name parts, an unknown word inside a name, a surname that is also a place, a one-word person by a defining word, a `child_of` fact | 23, 24, 25 | no — morphology, gazetteer and rules in code |
+| [persons](persons/main.go) | *(0.4.0)* rule patterns: a person span over its name parts, an unknown word inside a name, a surname that is also a place, a one-word person by a defining word, a `child_of` fact | 23, 24, 25 | no — morphology, gazetteer and rules in code |
 | [base](base/main.go) | the real OpenCorpora base: provenance, `text` vs `name` profile | 4, 6, 11 | yes — `lexicon dicts fetch` first |
 
 Run any of them from the repository root:

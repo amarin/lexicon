@@ -9,7 +9,7 @@
   [scenarios 15–20](scenarios.md#15-find-entities-with-dictionaries);
   word forms (0.3.0):
   [scenario 22](scenarios.md#22-word-forms-and-number-agreement);
-  patterns and facts (0.4, unreleased):
+  patterns and facts (0.4.0):
   [scenarios 23–25](scenarios.md#23-sequence-patterns)
 - [Installation](installation.md)
 - [CLI: lexicon](cli.md)

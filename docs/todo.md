@@ -17,14 +17,15 @@ Mark completed items with `[x]` and move their write-up to
 | User documentation: scenarios, installation, CLI, library (EN + RU), runnable examples, godoc examples | 0.2.0, 2026-09-26 | [en/index.md](en/index.md), [ru/index.md](ru/index.md), [examples/](../examples/README.md) |
 | v0.2 — dictionary NER: `gazetteer`, `rules` (hints, triggers, rule sets by document tags), `ner`, `nertest`, CLI `extract`/`golden`; user docs (scenarios 15–20, EN + RU) and examples `ner`, `gazetteer`, `golden` | 0.2.0, 2026-09-26 | [implementation/v0.2-ner.md](implementation/v0.2-ner.md) |
 | v0.3 — inflection API: `Registry.Inflect`, `NumeralGrammemes` (word forms by grammemes, number agreement; requested by genodex); scenario 22 (EN + RU), example `inflect` | 0.3.0, 2026-10-01 | [implementation/v0.3-inflect.md](implementation/v0.3-inflect.md), [plan](plans/2026-10-01-v0.3-inflect.md) |
+| v0.4 — patterns: `rules` sequence patterns (conditions, negation, groups; `relabel`, `boost`, `label`, `emit`), a person as one span with nested parts, `Result.Facts`, CLI facts, span end over an abbreviation dot (`ner-3`, ⚠ re-extract); scenarios 23–25 (EN + RU), example `persons`, person golden set (requested by genodex E9) | 0.4.0, 2026-10-04 | [implementation/v0.4-patterns.md](implementation/v0.4-patterns.md), [plan](plans/2026-10-04-v0.4-patterns.md), [design](specs/2026-10-04-v0.4-patterns-design.md) |
 
 ## Next milestones
 
 - [x] **v0.4 — patterns** (was v0.3): `rules` sequence patterns and facts
   (rule sets by document tags already ship in 0.2).
   [Plan](plans/2026-10-04-v0.4-patterns.md),
-  [implementation](implementation/v0.4-patterns.md). Implemented, not yet
-  released: the release commit adds its row to "Done".
+  [implementation](implementation/v0.4-patterns.md). Released as 0.4.0
+  (2026-10-04).
 
   **Blocks genodex E9** (mention suggestions; owner decision 2026-10-04):
   assembling a person's name from adjacent name words is pattern work in

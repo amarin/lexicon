@@ -394,7 +394,7 @@ added in both cases and `absorb` extends both over an adjacent keyword. A
 spans. No candidate is proposed over a range overlapping a `Blocked` match
 of the type.
 
-**Patterns** *(0.4, unreleased)* — sequences over terms and candidate spans
+**Patterns** *(0.4.0)* — sequences over terms and candidate spans
 ([scenario 23](scenarios.md#23-sequence-patterns)):
 
 ```go
