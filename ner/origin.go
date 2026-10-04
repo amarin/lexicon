@@ -7,6 +7,7 @@ const (
 	originLemma origin = iota + 1
 	originSurface
 	originTrigger
+	originPattern
 )
 
 // weight is the per-word origin weight.

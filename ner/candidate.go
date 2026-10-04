@@ -19,8 +19,9 @@ type candidate struct {
 	evidence   []string
 	absorbed   []int // keyword positions a rule absorbed into the range
 	removed    bool
+	labelled   bool // created by a pattern label (decision P12)
 	score      float64
-	alts       []*candidate // other readings of this range (D14): resolution losers, v0.3 relabel sources
+	alts       []*candidate // other readings of this range (D14): resolution losers, pattern relabel sources
 }
 
 func (c *candidate) words() int { return c.end - c.start }

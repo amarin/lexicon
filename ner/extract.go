@@ -41,6 +41,7 @@ func (p *Pipeline) Extract(ctx context.Context, d Doc, opts ...Option) (Result, 
 		st.filterEarly,
 		func() { st.applyHints(active.Hints) },
 		func() { st.applyTriggers(active.Triggers) },
+		func() { st.applyPatterns(active.Patterns) },
 		st.filterContext,
 		st.scoreAll,
 	}
