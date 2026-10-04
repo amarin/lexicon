@@ -7,16 +7,21 @@ import (
 	"strings"
 
 	"github.com/amarin/lexicon"
+	"github.com/amarin/lexicon/textnorm"
 )
 
 // span converts a candidate into an output span.
 func (s *state) span(text string, c *candidate) Span {
 	t0 := s.term(c.start).Token
 	t1 := s.term(c.end - 1).Token
+	end, runeEnd := t1.End, t1.RuneEnd
+	if dot := s.abbrevDot(c); dot != nil {
+		end, runeEnd = dot.End, dot.RuneEnd
+	}
 	sp := Span{
-		Start: t0.Start, End: t1.End,
-		RuneStart: t0.RuneStart, RuneEnd: t1.RuneEnd,
-		Surface:      text[t0.Start:t1.End],
+		Start: t0.Start, End: end,
+		RuneStart: t0.RuneStart, RuneEnd: runeEnd,
+		Surface:      text[t0.Start:end],
 		Type:         c.typ,
 		Normal:       c.normalForms(),
 		Refs:         c.refs(),
@@ -52,6 +57,31 @@ func (s *state) span(text string, c *candidate) Span {
 		}
 	}
 	return sp
+}
+
+// abbrevDot returns the '.' token that belongs to c's last word: the word
+// is immediately followed by a dot and is an abbreviation — by a lemma, or
+// because a matched alias is written with a trailing dot (decision P16).
+// A sentence dot after an ordinary word is not part of the span.
+func (s *state) abbrevDot(c *candidate) *textnorm.Token {
+	i := s.tx.TermIndex(c.end - 1)
+	last := &s.terms[i]
+	if !last.Token.Dotted || i+1 >= len(s.terms) {
+		return nil
+	}
+	dot := &s.terms[i+1].Token
+	if dot.Kind != textnorm.TokenPunct || dot.Raw != "." {
+		return nil
+	}
+	if hasLemmaFlag(last, lexicon.FlagAbbrev) {
+		return dot
+	}
+	for _, h := range c.hits {
+		if strings.HasSuffix(h.alias.Entry.Alias, ".") {
+			return dot
+		}
+	}
+	return nil
 }
 
 // composeNormal builds the normal form of a labelled span from the spans
