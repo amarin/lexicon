@@ -8,7 +8,9 @@
   — text analysis (0.1.0): scenarios 1–14; dictionary NER (0.2.0):
   [scenarios 15–20](scenarios.md#15-find-entities-with-dictionaries);
   word forms (0.3.0):
-  [scenario 22](scenarios.md#22-word-forms-and-number-agreement)
+  [scenario 22](scenarios.md#22-word-forms-and-number-agreement);
+  patterns and facts (0.4, unreleased):
+  [scenarios 23–25](scenarios.md#23-sequence-patterns)
 - [Installation](installation.md)
 - [CLI: lexicon](cli.md)
 - [Library reference](library.md)
@@ -24,8 +26,9 @@
   [v0.1 — lexicon package](../plans/2026-09-24-v0.1-analysis-lexicon.md),
   [v0.2 — NER](../plans/2026-09-24-v0.2-ner.md),
   [v0.3 — inflection](../plans/2026-10-01-v0.3-inflect.md),
-  [v0.4 — patterns](../plans/2026-09-24-v0.3-patterns.md)
+  [v0.4 — patterns](../plans/2026-10-04-v0.4-patterns.md)
 - Implementation write-ups: [v0.1 — analysis](../implementation/v0.1-analysis.md),
   [v0.2 — NER](../implementation/v0.2-ner.md),
-  [v0.3 — inflection](../implementation/v0.3-inflect.md)
+  [v0.3 — inflection](../implementation/v0.3-inflect.md),
+  [v0.4 — patterns](../implementation/v0.4-patterns.md)
 - [Agent and contributor instructions (AGENTS.md)](../../AGENTS.md)
