@@ -6,4 +6,5 @@ type Active struct {
 	Sets     []string
 	Hints    []*HintRule
 	Triggers []*TriggerRule
+	Patterns []*Program
 }

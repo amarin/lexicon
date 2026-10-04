@@ -59,7 +59,7 @@ func (b *Book) Sets() []string {
 	return out
 }
 
-// Active returns the rules of the sets whose When tags are all in tags.
+// Active returns the hints, triggers and patterns of the sets whose When tags are all in tags.
 // The returned rules are shared with the Book and every other caller: they
 // must not be modified.
 func (b *Book) Active(tags []string) Active {
@@ -71,6 +71,7 @@ func (b *Book) Active(tags []string) Active {
 		a.Sets = append(a.Sets, s.name)
 		a.Hints = append(a.Hints, s.hints...)
 		a.Triggers = append(a.Triggers, s.triggers...)
+		a.Patterns = append(a.Patterns, s.patterns...)
 	}
 	return a
 }

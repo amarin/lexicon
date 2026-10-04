@@ -1,6 +1,7 @@
 package rules
 
 import (
+	"errors"
 	"fmt"
 	"slices"
 )
@@ -11,6 +12,7 @@ type compiledSet struct {
 	when     []string
 	hints    []*HintRule
 	triggers []*TriggerRule
+	patterns []*Program
 }
 
 // compileSet validates rs from file (File.name); errors are *ruleError
@@ -33,6 +35,22 @@ func compileSet(file string, rs *RuleSet) (*compiledSet, error) {
 			return nil, fail(t.line, fmt.Sprintf("trigger %d", i), err)
 		}
 		cs.triggers = append(cs.triggers, tr)
+	}
+	for i, pt := range rs.Patterns {
+		prog, err := compilePattern(rs.Name, pt)
+		if err != nil {
+			line := pt.line
+			var le *lineError
+			if errors.As(err, &le) && le.line > 0 {
+				line = le.line
+			}
+			rule := fmt.Sprintf("pattern %q", pt.Name)
+			if pt.Name == "" {
+				rule = fmt.Sprintf("pattern %d", i)
+			}
+			return nil, fail(line, rule, err)
+		}
+		cs.patterns = append(cs.patterns, prog)
 	}
 	return cs, nil
 }
