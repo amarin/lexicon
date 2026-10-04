@@ -17,6 +17,10 @@ const (
 	testTSV   = "../../nertest/testdata/genealogy.tsv"
 	testRules = "../../nertest/testdata/genealogy.rules.yaml"
 	testCases = "../../nertest/testdata/genealogy.jsonl"
+
+	personsTSV   = "../../nertest/testdata/persons.tsv"
+	personsRules = "../../nertest/testdata/persons.rules.yaml"
+	personsCases = "../../nertest/testdata/persons.jsonl"
 )
 
 func useFakeDictionaries(t *testing.T) {

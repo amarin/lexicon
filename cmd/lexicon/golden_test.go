@@ -36,3 +36,17 @@ func TestGoldenBelowThreshold(t *testing.T) {
 		t.Fatalf("no --cases: exit %d", code)
 	}
 }
+
+func TestGoldenPersons(t *testing.T) {
+	useFakeDictionaries(t)
+	code, out, errs := runCmd(run, "",
+		"golden", "--cases", personsCases, "--dicts", "unused", "--ortho", "prereform", "--gazetteer", personsTSV, "--rules", personsRules,
+		"--nest", "person>given_name", "--nest", "person>patronymic", "--nest", "person>surname",
+		"--min-precision", "1", "--min-recall", "1")
+	if code != 0 {
+		t.Fatalf("exit %d: %s\n%s", code, errs, out)
+	}
+	if !strings.Contains(out, "person") || !strings.Contains(out, "cases: 20") {
+		t.Fatalf("report:\n%s", out)
+	}
+}

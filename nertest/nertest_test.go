@@ -179,3 +179,57 @@ func TestContextTags(t *testing.T) {
 		t.Fatalf("Run modified Case.Tags: %q", cases[0].Tags)
 	}
 }
+
+// personsPipeline builds a pipeline over the person fixtures; the host
+// nesting lets the name parts appear inside a person.
+func personsPipeline(t *testing.T) *ner.Pipeline {
+	t.Helper()
+	an := fakedict.NewAnalyzer()
+	gz, err := gazetteer.New(context.Background(), gazetteer.Config{
+		Analyzer: an, TypeProfiles: fakedict.TypeProfiles(), DefaultProfile: fakedict.Profiles()["text"],
+		Sources: []gazetteer.Source{gazetteer.NewTSVSource("persons", "testdata/persons.tsv")},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rep := gz.Snapshot().Reports()[0]; rep.Err != nil || len(rep.Errors) != 0 || rep.Aliases != 13 {
+		t.Fatalf("gazetteer report = %+v", rep)
+	}
+	rf, err := rules.LoadFile("testdata/persons.rules.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	book, err := rules.Compile(rf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, err := ner.New(ner.Config{
+		Analyzer: an, Gazetteer: gz, Rules: book, Profiles: fakedict.Profiles(), DefaultProfile: "text",
+		Nesting: map[string][]string{"person": {"given_name", "patronymic", "surname"}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return p
+}
+
+// TestPersonsGolden is the acceptance test of person assembly (genodex E9):
+// every case of the v0.4 design, in modern and pre-reform spelling.
+func TestPersonsGolden(t *testing.T) {
+	cases, err := LoadCasesFile("testdata/persons.jsonl")
+	if err != nil {
+		t.Fatal(err)
+	}
+	rep, err := Run(context.Background(), personsPipeline(t), cases)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if v := rep.Check(1, 1); len(v) != 0 {
+		var buf bytes.Buffer
+		_ = rep.Write(&buf)
+		t.Fatalf("person golden set failed: %q\n%s", v, buf.String())
+	}
+	if rep.Cases != 20 {
+		t.Fatalf("cases = %d", rep.Cases)
+	}
+}

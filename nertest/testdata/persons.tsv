@@ -1,0 +1,16 @@
+# source: lexicon test fixture
+# license: CC0-1.0
+# generated_from: hand-written for lexicon tests (v0.4 person assembly)
+estate	estate:1	крестьянин	крестьянин
+given_name	given_name:1	Иван	Иван
+given_name	given_name:4	Анна	Анна
+given_name	given_name:5	Алексей	Алексей
+given_name	given_name:6	Степан	Степан
+given_name	given_name:6	Степан	Степанов
+patronymic	patronymic:1	Петров	Петров
+patronymic	patronymic:1	Петров	Петрова
+patronymic	patronymic:2	Михайлов	Михайлова
+surname	surname:10	Сидоров	Сидоров
+surname	surname:11	Кузнецов	Кузнецова
+division	division:9	Головино	Головино		division_type=деревня
+division	division:9	Головино	Головина		division_type=деревня

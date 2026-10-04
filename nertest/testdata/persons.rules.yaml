@@ -1,0 +1,80 @@
+# Person assembly: the host-style rule set that proves the v0.4 pattern
+# engine (design: docs/specs/2026-10-04-v0.4-patterns-design.md).
+# The host allows the parts inside a person with
+# Nesting: {person: [given_name, patronymic, surname]}.
+meta:
+  source: lexicon test fixture
+  license: CC0-1.0
+
+sets:
+  - name: places
+    hints:
+      # «деревни Головина»: the keyword joins the place name.
+      - {lemma: деревня, type: division, dir: right, window: 1, weight: 2, absorb: true}
+
+  - name: persons
+    patterns:
+      # Fix-ups first: they retype or create the parts.
+      # «Алексей Степанов Сидоров»: a given-name reading in the patronymic slot.
+      - name: given-as-patronymic
+        elements:
+          - {type: given_name}
+          - {type: given_name, role: p}
+          - {type: surname}
+        actions:
+          - relabel: {role: p, type: patronymic}
+      # «Анна Петрова Головина»: a bare place name after given + patronymic is a surname.
+      - name: place-as-surname
+        elements:
+          - {type: given_name}
+          - {type: patronymic}
+          - {type: division, shape: {case: title}, role: s}
+        actions:
+          - relabel: {role: s, type: surname}
+      # «Анна Михаилова Кузнецова»: an unknown capitalised word between name words.
+      - name: unknown-patronymic
+        elements:
+          - {type: given_name}
+          - {token: word, shape: {case: title}, not: {type: given_name|patronymic|surname}, role: p}
+          - {type: surname}
+        actions:
+          - label: {role: p, type: patronymic}
+      # «Иван Петров Лаптев»: an unknown capitalised word after given + patronymic.
+      - name: unknown-surname
+        elements:
+          - {type: given_name}
+          - {type: patronymic}
+          - {token: word, shape: {case: title}, not: {type: given_name|patronymic|surname}, role: s}
+        actions:
+          - label: {role: s, type: surname}
+
+      # Assembly: one person per match.
+      # «Кузнецова Анна Михайлова».
+      - name: person-surname-first
+        elements:
+          - group:
+              - {type: surname}
+              - {type: given_name}
+              - {type: patronymic}
+            role: who
+        actions:
+          - label: {role: who, type: person}
+      # given + (patronymic | surname) + surname?
+      - name: person
+        elements:
+          - group:
+              - {type: given_name}
+              - {type: patronymic|surname}
+              - {type: surname, repeat: "?"}
+            role: who
+        actions:
+          - label: {role: who, type: person}
+      # «ответчик Сидоров», «крестьянин Сидоров»: one name word with a defining word.
+      - name: person-by-defining-word
+        elements:
+          - {lemma: крестьянин|мещанин|ответчик|истец}
+          - group:
+              - {type: surname}
+            role: who
+        actions:
+          - label: {role: who, type: person}
