@@ -126,9 +126,6 @@ Carried over from [implementation/v0.4-patterns.md](implementation/v0.4-patterns
 - [ ] **Q-v03-8. Repeated role captures.** A repeated `role` keeps its last
   repetition; «восприемники: …» needs all of them. Scenarios 23, 25.
 - [ ] **Q-v03-10. Agreed normal forms** — see the follow-up below.
-- [ ] **Q-v04-1. `Predicted` on composite spans.** Should a span created by
-  `label` take `Predicted` only from words outside its nested parts? Changing
-  it changes output flags: ⚠ re-extract. Scenario 24.
 
 ## Follow-ups
 

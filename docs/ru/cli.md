@@ -218,15 +218,15 @@ lexicon extract --dicts dicts --ortho prereform --gazetteer persons.tsv --rules 
   --nest 'person>given_name' --nest 'person>patronymic' --nest 'person>surname' "Мария, дочь Ивана Петрова"
 ```
 ```
-DOC  START  END  TYPE        SURFACE        NORMAL                                REFS  FLAGS      SCORE
-1    0      10   given_name  Мария          Мария                                 g3               3.00
-1    21     46   person      Ивана Петрова  Иван Петров                                 predicted  3.50
-1    21     31   given_name  Ивана          Иван                                  g1    nested     2.00
-1    32     46   patronymic  Петрова        Петров                                p1    nested     3.00
+DOC  START  END  TYPE        SURFACE        NORMAL                                REFS  FLAGS   SCORE
+1    0      10   given_name  Мария          Мария                                 g3            3.00
+1    21     46   person      Ивана Петрова  Иван Петров                                         3.50
+1    21     31   given_name  Ивана          Иван                                  g1    nested  2.00
+1    32     46   patronymic  Петрова        Петров                                p1    nested  3.00
 1                fact        child_of       child=«Мария» parent=«Ивана Петрова»
 ```
 
-`predicted` у персоны: крошечная база знает мало слов; см.
+У персоны нет собственных флагов: её слова лежат внутри частей; см.
 [сценарий 24](scenarios.md#24-персона-одним-спаном).
 
 **Поведение в 0.2:** один профиль анализатора, `text` (все включённые

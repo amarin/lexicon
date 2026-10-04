@@ -19,13 +19,19 @@ Notable changes of the project are recorded in this file (format inspired by
   like hints and triggers.
 - `ner`: patterns run after triggers, per sentence, over the candidates
   before resolution. `Result.Facts` and `Fact{Kind, Args, Rule}` — facts
-  whose argument spans are all in the output.
+  whose argument spans are all in the output, in match order; a fact
+  follows its argument when a later pattern relabels it.
 - `ner`: a span created by `label` over other spans is a composite: with
   `Config.Nesting` pairs its parts are output inside it, and a part may
   cover the same range as the composite (a one-word person keeps its
-  surname part). Its `Normal` is built from the parts.
+  surname part, a dictionary one or one an earlier pattern labelled). Its
+  `Normal` is built from the parts. The match is the context of the parts,
+  so a `requires_context` part is kept («Иван Мороз»). The composite takes
+  the word flags `Predicted` and `Ambiguous` only from words outside its
+  parts; other readings of a range it shares with a part are alternatives
+  of the part.
 - Person assembly as rule data: fixture `nertest/testdata/persons.*`
-  (20 golden cases, modern and pre-reform spelling) and example `persons`.
+  (23 golden cases, modern and pre-reform spelling) and example `persons`.
 - `lexicon extract` prints facts (table rows of type `fact`, JSONL lines
   with `fact`, `args`, `rule`).
 

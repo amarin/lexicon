@@ -11,7 +11,7 @@ type ruleError struct {
 	file string // File.name; "" = "<input>"
 	line int    // 0 = unknown (a File built in Go)
 	set  string // set name, "#<index>" when empty
-	rule string // "hint 0", "trigger 1" `pattern "age"`; "" for the set itself
+	rule string // "hint 0", "trigger 1", `pattern "age"`; "" for the set itself
 	msg  string
 }
 

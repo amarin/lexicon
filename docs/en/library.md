@@ -511,12 +511,17 @@ lemma sequences of its words (the absorbed keyword excluded, at most
 origin weight plus the action weights. The `Normal` of a labelled span with
 nested parts joins the parts' first normal forms (other words: their
 lemma). A span whose last word is a dotted abbreviation ends after the dot.
-A labelled span is not a surface match, so it is `Predicted` when any
-covered word has only predicted lemmas ([scenario 24](scenarios.md#24-a-person-as-one-span)).
+A labelled span is not a surface match, so it is `Predicted` when a
+covered word has only predicted lemmas; with nested parts it takes
+`Predicted` and the abbreviation `Ambiguous` only from the words outside
+its parts ([scenario 24](scenarios.md#24-a-person-as-one-span)).
 
 `New` returns an error for a nil `Analyzer` or `Gazetteer` and for a
-`DefaultProfile` missing from `Profiles`; it copies the host's maps. `Extract` is linear in the document size and
-checks `ctx` between stages.
+`DefaultProfile` missing from `Profiles`; it copies the host's maps.
+`Extract` checks `ctx` between stages. It is linear in the document size
+for rule books whose patterns have no unbounded repeat; an unbounded repeat
+(`{any: true, repeat: "*"}`) costs time quadratic in the length of a
+sentence ([scenario 23](scenarios.md#23-sequence-patterns)).
 
 ## nertest
 

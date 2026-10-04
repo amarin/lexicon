@@ -930,6 +930,13 @@ the place: `file.yaml:12: persons/pattern "person": …`.
   a pattern: the first word of a sentence is capitalised too.
 - `type` next to `shape` skips a span that absorbed a lower-case keyword
   («дер. Головина»).
+- Punctuation is a term. The dot of an abbreviation between two spans
+  («крест. Иван») needs `{token: punct, repeat: "?"}` between the two
+  `type` elements.
+- `Extract` stays linear in the document size for patterns without an
+  unbounded repeat. An unbounded repeat (`{any: true, repeat: "*"}`) costs
+  time quadratic in the length of a sentence: take the estate or period
+  context from document tags (`when:`), not from an `any*` prefix.
 
 ## 24. A person as one span
 
@@ -984,13 +991,29 @@ A complete rule set with golden cases:
 **Behaviour in 0.4:**
 - Whether one name word is a person is your rule set's choice: write a
   pattern with a defining word. A lone given name stays a `given_name`.
-- A person span is not a surface match, so it carries `Predicted` when one
-  of its words is known only by predicted lemmas, even when the nested part
-  over that word is a surface match without the flag
-  ([todo](../todo.md), Q-v04-1).
+- A person takes the word flags `Predicted` and `Ambiguous` (an ambiguous
+  abbreviation) only from words outside its parts: a part settled its own
+  words and carries their flags itself. `Abbrev` is set for an abbreviation
+  anywhere in the span. A span a pattern created without parts inside it
+  is `Predicted` when one of its words is known only by predicted lemmas.
 - A part that a pattern created from an unknown word is a `Candidate`
   without `Refs`; a part that was relabelled keeps its previous reading in
   `Alternatives` (a surname that is also a village).
+- The person's `Normal` joins the canonical forms of its dictionary parts
+  with the lower-case lemmas of the parts a pattern labelled or relabelled
+  and of the words outside parts («Анна Петров головина»). Agreed forms
+  are an open question ([todo](../todo.md), Q-v03-10).
+- A part that requires context (`requires_context`: a surname that is also
+  a common word, «Мороз») is kept when a pattern assembles a person over
+  it — the match is its context: «Иван Мороз» is a person with the surname
+  part, «ударил мороз» gives nothing.
+- A one-word person can stand over an unknown word («ответчик Лаптев»):
+  one pattern labels the word a `surname`, a later one labels the person
+  over it (`unknown-surname-by-defining-word` in the rule set above). The
+  surname is nested on the same range and is a `Candidate`.
+- Other readings of a one-word person's range (the surname is also a
+  village) are `Alternatives` of the nested part, not of the person, and a
+  tie marks the part `Ambiguous`.
 
 ## 25. Facts from patterns
 
