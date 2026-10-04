@@ -14,3 +14,4 @@ surname	surname:10	Сидоров	Сидоров
 surname	surname:11	Кузнецов	Кузнецова
 division	division:9	Головино	Головино		division_type=деревня
 division	division:9	Головино	Головина		division_type=деревня
+surname	surname:12	Мороз	Мороз	requires_context

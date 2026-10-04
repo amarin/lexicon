@@ -46,7 +46,7 @@ func TestGoldenPersons(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit %d: %s\n%s", code, errs, out)
 	}
-	if !strings.Contains(out, "person") || !strings.Contains(out, "cases: 20") {
+	if !strings.Contains(out, "person") || !strings.Contains(out, "cases: 23") {
 		t.Fatalf("report:\n%s", out)
 	}
 }

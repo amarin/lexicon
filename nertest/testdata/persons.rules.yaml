@@ -47,6 +47,13 @@ sets:
           - {token: word, shape: {case: title}, not: {type: given_name|patronymic|surname}, role: s}
         actions:
           - label: {role: s, type: surname}
+      # «ответчик Лаптев»: an unknown capitalised word after a defining word.
+      - name: unknown-surname-by-defining-word
+        elements:
+          - {lemma: крестьянин|мещанин|ответчик|истец}
+          - {token: word, shape: {case: title}, not: {type: given_name|patronymic|surname}, role: s}
+        actions:
+          - label: {role: s, type: surname}
 
       # Assembly: one person per match.
       # «Кузнецова Анна Михайлова».

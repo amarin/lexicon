@@ -18,3 +18,6 @@
 {"id": "prereform-given-as-patronymic", "text": "Алексѣй Степановъ Сидоровъ", "spans": [{"text": "Алексѣй Степановъ Сидоровъ", "type": "person"}, {"text": "Алексѣй", "type": "given_name"}, {"text": "Степановъ", "type": "patronymic"}, {"text": "Сидоровъ", "type": "surname"}]}
 {"id": "prereform-two-persons", "text": "Иванъ Петровъ Сидоровъ Анна Михайлова Кузнецова", "spans": [{"text": "Иванъ Петровъ Сидоровъ", "type": "person"}, {"text": "Иванъ", "type": "given_name"}, {"text": "Петровъ", "type": "patronymic"}, {"text": "Сидоровъ", "type": "surname"}, {"text": "Анна Михайлова Кузнецова", "type": "person"}, {"text": "Анна", "type": "given_name"}, {"text": "Михайлова", "type": "patronymic"}, {"text": "Кузнецова", "type": "surname"}]}
 {"id": "prereform-defining-word", "text": "отвѣтчикъ Сидоровъ", "spans": [{"text": "Сидоровъ", "type": "person"}, {"text": "Сидоровъ", "type": "surname"}]}
+{"id": "defining-word-unknown-surname", "text": "ответчик Лаптев", "spans": [{"text": "Лаптев", "type": "person"}, {"text": "Лаптев", "type": "surname"}]}
+{"id": "requires-context-surname", "text": "Иван Мороз", "spans": [{"text": "Иван Мороз", "type": "person"}, {"text": "Иван", "type": "given_name"}, {"text": "Мороз", "type": "surname"}]}
+{"id": "frost", "text": "ударил мороз", "spans": []}

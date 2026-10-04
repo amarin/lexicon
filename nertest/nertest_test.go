@@ -192,7 +192,7 @@ func personsPipeline(t *testing.T) *ner.Pipeline {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if rep := gz.Snapshot().Reports()[0]; rep.Err != nil || len(rep.Errors) != 0 || rep.Aliases != 13 {
+	if rep := gz.Snapshot().Reports()[0]; rep.Err != nil || len(rep.Errors) != 0 || rep.Aliases != 14 {
 		t.Fatalf("gazetteer report = %+v", rep)
 	}
 	rf, err := rules.LoadFile("testdata/persons.rules.yaml")
@@ -229,7 +229,7 @@ func TestPersonsGolden(t *testing.T) {
 		_ = rep.Write(&buf)
 		t.Fatalf("person golden set failed: %q\n%s", v, buf.String())
 	}
-	if rep.Cases != 20 {
+	if rep.Cases != 23 {
 		t.Fatalf("cases = %d", rep.Cases)
 	}
 }
