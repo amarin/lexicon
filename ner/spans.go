@@ -62,6 +62,8 @@ func (s *state) span(text string, c *candidate) Span {
 // abbrevDot returns the '.' token that belongs to c's last word: the word
 // is immediately followed by a dot and is an abbreviation — by a lemma, or
 // because a matched alias is written with a trailing dot (decision P16).
+// A span also takes the dot when a part nested directly in it and ending at
+// its last word takes it, so a nested span never ends past its outer one.
 // A sentence dot after an ordinary word is not part of the span.
 func (s *state) abbrevDot(c *candidate) *textnorm.Token {
 	i := s.tx.TermIndex(c.end - 1)
@@ -78,6 +80,11 @@ func (s *state) abbrevDot(c *candidate) *textnorm.Token {
 	}
 	for _, h := range c.hits {
 		if strings.HasSuffix(h.alias.Entry.Alias, ".") {
+			return dot
+		}
+	}
+	for _, p := range c.parts {
+		if p.end == c.end && s.abbrevDot(p) != nil {
 			return dot
 		}
 	}

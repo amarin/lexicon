@@ -22,7 +22,7 @@ type candidate struct {
 	labelled   bool // created by a pattern label (decision P12)
 	score      float64
 	alts       []*candidate // other readings of this range (D14): resolution losers, pattern relabel sources
-	parts      []*candidate // labelled only: the spans chosen directly inside it, in text order (set by resolve)
+	parts      []*candidate // the spans chosen directly inside it, in text order (set by resolve)
 }
 
 func (c *candidate) words() int { return c.end - c.start }

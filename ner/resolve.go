@@ -40,9 +40,7 @@ func (s *state) resolve() ([]*candidate, map[*candidate]bool) {
 				nested[c] = true
 			}
 			in := r.inner(c)
-			if c.labelled {
-				c.parts = in.items
-			}
+			c.parts = in.items
 			walk(in, true)
 		}
 	}
