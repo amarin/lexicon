@@ -30,6 +30,26 @@ func setPositions(f *File, root *yaml.Node) {
 		for j := range rs.Triggers {
 			rs.Triggers[j].line = lineOf(item(triggers, j), rs.line)
 		}
+		patterns := child(n, "patterns")
+		for j := range rs.Patterns {
+			pn := item(patterns, j)
+			pt := &rs.Patterns[j]
+			pt.line = lineOf(pn, rs.line)
+			elementPositions(pt.Elements, child(pn, "elements"), pt.line)
+		}
+	}
+}
+
+// elementPositions sets the source lines of es from seq, recursing into
+// groups and not-conditions; elements without a node get fallback.
+func elementPositions(es []Element, seq *yaml.Node, fallback int) {
+	for i := range es {
+		n := item(seq, i)
+		es[i].line = lineOf(n, fallback)
+		if es[i].Not != nil {
+			es[i].Not.line = lineOf(child(n, "not"), es[i].line)
+		}
+		elementPositions(es[i].Group, child(n, "group"), es[i].line)
 	}
 }
 

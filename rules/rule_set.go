@@ -7,6 +7,7 @@ type RuleSet struct {
 	When     []string  `yaml:"when,omitempty"`
 	Hints    []Hint    `yaml:"hints,omitempty"`
 	Triggers []Trigger `yaml:"triggers,omitempty"`
+	Patterns []Pattern `yaml:"patterns,omitempty"`
 
 	line int // source line of the set, set by Load (decision D15)
 }
