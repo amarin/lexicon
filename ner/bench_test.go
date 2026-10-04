@@ -46,3 +46,22 @@ func BenchmarkExtract64KBDense(b *testing.B) {
 		}
 	}
 }
+
+// BenchmarkExtract1KBPatterns: 1 KB of name-dense text through the person
+// rule set (seven patterns, nesting on).
+func BenchmarkExtract1KBPatterns(b *testing.B) {
+	p := personsPipeline(b, true)
+	const sentence = "Крестьянин Иван Петров Сидоров и Анна Михаилова Кузнецова, ответчик Сидоров. "
+	doc := Doc{Text: strings.Repeat(sentence, 1024/len(sentence)+1)}
+	if _, err := p.Extract(context.Background(), doc); err != nil {
+		b.Fatal(err)
+	}
+	b.SetBytes(int64(len(doc.Text)))
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if _, err := p.Extract(context.Background(), doc); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
