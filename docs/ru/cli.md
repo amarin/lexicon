@@ -202,6 +202,33 @@ printf 'Лягушкино\nиз Боровского уезда\n' | lexicon ex
 {"doc":2,"start":5,"end":36,"rune_start":3,"rune_end":19,"type":"division","surface":"Боровского уезда","normal":["Боровский"],"refs":["d2"],"attrs":{"level":"uezd"},"score":6.5}
 ```
 
+Факты *(0.4, не выпущено)*: после спанов документа — по строке таблицы на
+факт: номер документа, тип `fact`, вид факта в колонке поверхности и пары
+`роль=«поверхность»` по алфавиту ролей в колонке нормальных форм; с
+`--format jsonl` — по строке на факт,
+`{"doc":1,"fact":"child_of","args":{"child":0,"parent":2},"rule":"child-of"}`.
+`args` — индексы строк спанов этого документа в порядке печати. Факты
+дают паттерны правил ([сценарий 25](scenarios.md#25-факты-из-паттернов)).
+Если набор правил примера [persons](../../examples/persons/main.go)
+сохранён как `persons.yaml`, его газетир — как `persons.tsv`, а строки базы
+— в `dicts/base.demo.tsv`:
+
+```bash
+lexicon extract --dicts dicts --ortho prereform --gazetteer persons.tsv --rules persons.yaml \
+  --nest 'person>given_name' --nest 'person>patronymic' --nest 'person>surname' "Мария, дочь Ивана Петрова"
+```
+```
+DOC  START  END  TYPE        SURFACE        NORMAL                                REFS  FLAGS      SCORE
+1    0      10   given_name  Мария          Мария                                 g3               3.00
+1    21     46   person      Ивана Петрова  Иван Петров                                 predicted  3.50
+1    21     31   given_name  Ивана          Иван                                  g1    nested     2.00
+1    32     46   patronymic  Петрова        Петров                                p1    nested     3.00
+1                fact        child_of       child=«Мария» parent=«Ивана Петрова»
+```
+
+`predicted` у персоны: крошечная база знает мало слов; см.
+[сценарий 24](scenarios.md#24-персона-одним-спаном).
+
 **Поведение в 0.2:** один профиль анализатора, `text` (все включённые
 виды словарей), обслуживает и документы, и псевдонимы; два файла
 `--gazetteer` с одинаковым базовым именем без расширения (`a/x.tsv`,
@@ -246,3 +273,4 @@ lexicon: golden: below threshold
 
 - 0.1.0 — `analyze`, `dicts list`, `dicts fetch`.
 - 0.2.0 — `extract`, `golden`.
+- 0.4 (не выпущено): extract печатает факты; спаны, кончающиеся сокращением с точкой, включают точку ⚠ переизвлечение.

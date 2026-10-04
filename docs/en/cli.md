@@ -201,6 +201,33 @@ printf 'Лягушкино\nиз Боровского уезда\n' | lexicon ex
 {"doc":2,"start":5,"end":36,"rune_start":3,"rune_end":19,"type":"division","surface":"Боровского уезда","normal":["Боровский"],"refs":["d2"],"attrs":{"level":"uezd"},"score":6.5}
 ```
 
+Facts *(0.4, unreleased)*: after the spans of a document, one table row
+per fact — the document number, the type column `fact`, the fact kind in
+the surface column and `role=«surface»` pairs sorted by role in the normal
+column; with `--format jsonl` one line per fact,
+`{"doc":1,"fact":"child_of","args":{"child":0,"parent":2},"rule":"child-of"}`.
+`args` index the span lines of that document in the order printed. Facts
+come from rule patterns ([scenario 25](scenarios.md#25-facts-from-patterns)).
+With the rule set of the [persons](../../examples/persons/main.go) example
+saved as `persons.yaml`, its gazetteer as `persons.tsv` and its base rows in
+`dicts/base.demo.tsv`:
+
+```bash
+lexicon extract --dicts dicts --ortho prereform --gazetteer persons.tsv --rules persons.yaml \
+  --nest 'person>given_name' --nest 'person>patronymic' --nest 'person>surname' "Мария, дочь Ивана Петрова"
+```
+```
+DOC  START  END  TYPE        SURFACE        NORMAL                                REFS  FLAGS      SCORE
+1    0      10   given_name  Мария          Мария                                 g3               3.00
+1    21     46   person      Ивана Петрова  Иван Петров                                 predicted  3.50
+1    21     31   given_name  Ивана          Иван                                  g1    nested     2.00
+1    32     46   patronymic  Петрова        Петров                                p1    nested     3.00
+1                fact        child_of       child=«Мария» parent=«Ивана Петрова»
+```
+
+`predicted` on the person: the tiny base knows few words; see
+[scenario 24](scenarios.md#24-a-person-as-one-span).
+
 **Behaviour in 0.2:** one analyzer profile, `text` (every enabled
 dictionary kind), serves documents and aliases alike; two `--gazetteer`
 files with the same basename without extension (`a/x.tsv`, `b/x.txt`) fail
@@ -245,3 +272,4 @@ map it to tags; use `nertest.WithTags` from Go), and a case with a
 
 - 0.1.0 — `analyze`, `dicts list`, `dicts fetch`.
 - 0.2.0 — `extract`, `golden`.
+- 0.4 (unreleased): extract prints facts; spans ending in a dotted abbreviation include the dot ⚠ re-extract.

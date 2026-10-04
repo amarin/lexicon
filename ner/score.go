@@ -3,7 +3,7 @@ package ner
 import "math"
 
 // scoreAll computes candidate scores (decision D6). Alternatives already
-// attached to a candidate (v0.3 Relabel) are scored too; they may be
+// attached to a candidate (pattern relabel) are scored too; they may be
 // removed candidates. Scores are quantized so that two candidates whose
 // formulas are mathematically equal always compare equal, regardless of
 // float64 summation order.

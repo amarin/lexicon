@@ -20,8 +20,8 @@ Project instructions for AI agents (Codex, Claude, LGTM).
   base dictionary; imports gomorphy's pymorphy loader), `cmd/lexicon` (CLI). From
   v0.2: `gazetteer` (TSV/in-memory alias sources compiled into versioned trie
   snapshots, zero-allocation matching), `rules` (YAML/JSON rule books: hints,
-  triggers, tag-gated rule sets), `ner` (the extraction pipeline — `Doc`, `Span`,
-  `Result`, filters, scoring, overlap resolution — built on `gazetteer` and
+  triggers, sequence patterns, tag-gated rule sets), `ner` (the extraction pipeline — `Doc`, `Span`,
+  `Fact`, `Result`, filters, pattern actions, scoring, overlap resolution — built on `gazetteer` and
   `rules`), `nertest` (golden-JSONL test harness with strict/partial
   precision/recall), and `internal/fakedict` (the `lexicon.Dictionaries`/
   `Analyzer` test fixture shared by `gazetteer`, `ner` and `nertest` tests, not
@@ -88,6 +88,7 @@ Project instructions for AI agents (Codex, Claude, LGTM).
   `go test ./ner/ -run '^$' -fuzz FuzzExtractOffsets -fuzztime 30s -fuzzminimizetime 5s` —
   one fuzz target per run (for `ner`, the default 60 s input minimization would stall a short run).
 - `go test ./... -run '^$' -bench . -benchmem` — benchmarks.
+- `go test ./nertest/ -run TestPersonsGolden -v` — the person-assembly acceptance set.
 - `LEXICON_BASE_DAT=/path/base.opencorpora.dat go test -tags integration ./... -count=1` —
   tests with the real base dictionary (`LEXICON_FETCH=1` also exercises the download).
 - `go run ./cmd/lexicon analyze [--dicts DIR] [--ortho modern|prereform] [--profile SPEC] [--mode index|full] TEXT...`

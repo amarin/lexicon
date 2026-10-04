@@ -359,6 +359,7 @@ type RuleSet struct {
     When     []string  // `when:` — active when the document has ALL these tags; empty = always
     Hints    []Hint
     Triggers []Trigger
+    Patterns []Pattern // `patterns:` (0.4)
 }
 ```
 
@@ -393,9 +394,44 @@ added in both cases and `absorb` extends both over an adjacent keyword. A
 spans. No candidate is proposed over a range overlapping a `Blocked` match
 of the type.
 
+**Patterns** *(0.4, unreleased)* — sequences over terms and candidate spans
+([scenario 23](scenarios.md#23-sequence-patterns)):
+
+```go
+type Pattern struct {
+    Name     string    // `name:` — required, appears in evidence and Fact.Rule
+    Elements []Element // `elements:`
+    Actions  []Action  // `actions:` — exactly one of relabel, boost, label, emit each
+}
+type Element struct {
+    Type, Lemma, Grammeme, Token string // alternatives with "|"
+    Shape  Shape     // `shape: {case, script}`
+    Not    *Element  // `not:` — type, lemma, grammeme, token, shape only
+    Any    bool      // `any: true` — one term, no other condition
+    Group  []Element // `group:` — no conditions next to it
+    Repeat Repeat    // `repeat:` "?", "*", "+" — quoted in YAML
+    Role   string    // `role:`
+}
+type Relabel struct { Role, Type string; Weight float32 } // role bound to a type element
+type Boost   struct { Role string; Weight float32 }
+type Label   struct { Role, Type string; Weight float32 } // role bound to a group or a term element
+type Emit    struct { Kind string; Args map[string]string } // fact role → pattern role (a span)
+```
+
+`Weight` defaults to 1. `Compile` rejects: an element with no condition,
+`any` with other conditions, a `group` with conditions, an unknown token
+kind or shape, `not` with `role`/`repeat`/`group`/`any`/`not`, an action
+on an unknown role, `relabel` on a role not bound to a `type` element,
+`label` on a role bound to one, `boost` or an `emit` argument on a role
+that is not a span. Errors read `<file>:<line>: <set>/pattern "<name>":
+<message>` with the line of the offending element.
+
+`Program`, `Lattice`, `LatticeSpan`, `Capture` and `PatternMatch` are what
+`ner` runs patterns with; a host does not need them.
+
 | `Book` method | |
 |---|---|
-| `Active(tags) Active` | hints and triggers of the sets whose `When` tags are all in `tags`, in file and set order; shared, do not modify |
+| `Active(tags) Active` | hints, triggers and patterns of the sets whose `When` tags are all in `tags`, in file and set order; shared, do not modify |
 | `Sets() []string` | set names in order |
 | `Version() string` | changes when any rule or meta value changes |
 
@@ -428,8 +464,14 @@ type Doc struct {
     Types   []string // output filter, applied after resolution
 }
 type Result struct {
-    Spans   []Span // by Start, then longer first, then Type
+    Spans   []Span // by Start, then longer first, then a labelled span before its same-range part, then Type
+    Facts   []Fact // from patterns (0.4); every argument is a span of this Result
     Version string // extractor, analyzer, gazetteer snapshot, rules, configuration
+}
+type Fact struct {
+    Kind string
+    Args map[string]int // fact role → index in Result.Spans
+    Rule string         // pattern name
 }
 type Span struct {
     Start, End         int // bytes in Doc.Text; Doc.Text[Start:End] == Surface
@@ -447,9 +489,10 @@ type Span struct {
 
 `Extract` runs: analysis (`ModeFull`) → gazetteer matches → filters
 (`Blocked`, `CaseSensitive`, short lemma matches) → hints → triggers →
-`RequiresContext` filter → scoring → weighted interval scheduling (no
-crossing spans; nesting only for `Config.Nesting` pairs) → the
-`Doc.Types` filter. Score = (origin weight + `Types[type]`) × words +
+patterns → `RequiresContext` filter → scoring → weighted interval
+scheduling (no crossing spans; nesting only for `Config.Nesting` pairs,
+where a span created by a pattern `label` may also hold an inner span on
+its own whole range) → the `Doc.Types` filter → facts. Score = (origin weight + `Types[type]`) × words +
 `LengthBonus` × (words − 1) + hint/trigger evidence − `AmbiguityPenalty` ×
 (max(distinct refs, distinct normal forms, 1) − 1), rounded to 1e-6;
 candidates scoring 0 or below are dropped before resolution.
@@ -464,7 +507,12 @@ forms, a type tie, or a covered ambiguous abbreviation no rule absorbed
 word known only by predicted lemmas (not set on surface matches); `Abbrev`,
 `Candidate`, `Nested`. A trigger candidate's `Normal` is the lower-case
 lemma sequences of its words (the absorbed keyword excluded, at most
-`gazetteer.MaxLemmaKeys`).
+`gazetteer.MaxLemmaKeys`). A pattern-created span scores with the trigger
+origin weight plus the action weights. The `Normal` of a labelled span with
+nested parts joins the parts' first normal forms (other words: their
+lemma). A span whose last word is a dotted abbreviation ends after the dot.
+A labelled span is not a surface match, so it is `Predicted` when any
+covered word has only predicted lemmas ([scenario 24](scenarios.md#24-a-person-as-one-span)).
 
 `New` returns an error for a nil `Analyzer` or `Gazetteer` and for a
 `DefaultProfile` missing from `Profiles`; it copies the host's maps. `Extract` is linear in the document size and

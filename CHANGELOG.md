@@ -5,6 +5,36 @@ Notable changes of the project are recorded in this file (format inspired by
 
 ## [Unreleased]
 
+### Added
+
+- `rules`: sequence patterns in rule sets (`patterns:`): elements match a
+  candidate span type, a lemma, a grammeme, a token kind or a word shape
+  (`shape: {case: title}`), combine on one element, can be negated (`not:`),
+  grouped and repeated (`"?"`, `"*"`, `"+"`); actions `relabel` (retype a
+  span, the previous reading stays in `Alternatives`), `boost`, `label`
+  (create a span over the captured words) and `emit` (a fact). New types:
+  `Pattern`, `Element`, `Repeat`, `Action`, `Relabel`, `Boost`, `Label`,
+  `Emit`, `Program`, `PatternMatch`, `Capture`, `LatticeSpan`, `Lattice`;
+  `RuleSet.Patterns`, `Active.Patterns`. Patterns are gated by document tags
+  like hints and triggers.
+- `ner`: patterns run after triggers, per sentence, over the candidates
+  before resolution. `Result.Facts` and `Fact{Kind, Args, Rule}` — facts
+  whose argument spans are all in the output.
+- `ner`: a span created by `label` over other spans is a composite: with
+  `Config.Nesting` pairs its parts are output inside it, and a part may
+  cover the same range as the composite (a one-word person keeps its
+  surname part). Its `Normal` is built from the parts.
+- Person assembly as rule data: fixture `nertest/testdata/persons.*`
+  (20 golden cases, modern and pre-reform spelling) and example `persons`.
+- `lexicon extract` prints facts (table rows of type `fact`, JSONL lines
+  with `fact`, `args`, `rule`).
+
+### Changed
+
+- ⚠ re-extract. A span whose last word is a dotted abbreviation now ends
+  after the dot («Калужской губ.», «крест.»); `ner.extractorVersion` is
+  `ner-3`, so `Result.Version` changes for every host.
+
 ## [0.3.0] - 2026-10-01
 
 ### Added

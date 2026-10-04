@@ -20,9 +20,11 @@ Mark completed items with `[x]` and move their write-up to
 
 ## Next milestones
 
-- [ ] **v0.4 — patterns** (was v0.3): `rules` sequence patterns and facts
+- [x] **v0.4 — patterns** (was v0.3): `rules` sequence patterns and facts
   (rule sets by document tags already ship in 0.2).
-  [Plan](plans/2026-09-24-v0.3-patterns.md).
+  [Plan](plans/2026-10-04-v0.4-patterns.md),
+  [implementation](implementation/v0.4-patterns.md). Implemented, not yet
+  released: the release commit adds its row to "Done".
 
   **Blocks genodex E9** (mention suggestions; owner decision 2026-10-04):
   assembling a person's name from adjacent name words is pattern work in
@@ -32,7 +34,7 @@ Mark completed items with `[x]` and move their write-up to
   and plain «given patronymic surname» sequences come out right as
   separate word spans; the cases below do not.
 
-  - [ ] **Person as one unit.** A sequence of name words (given,
+  - [x] **Person as one unit.** A sequence of name words (given,
     given + patronymic, given + surname, given + patronymic + surname,
     surname + given + patronymic) must reach the host as one range with
     its parts by role, each part keeping its `Refs`. Decide the carrier:
@@ -42,26 +44,26 @@ Mark completed items with `[x]` and move their write-up to
     group-role relabel, P6, and a `Nesting` pair per part type). The host
     needs the whole range for the mention and the parts for matching
     against its persons.
-  - [ ] **Unknown word inside a name.** A capitalised word with no
+  - [x] **Unknown word inside a name.** A capitalised word with no
     dictionary hit between or right after name words is a name part
     («Анна Михаилова Кузнецова» with «Михаилова» absent from the
     patronymic dictionary): token-role relabel (P6) to a `Candidate`
     patronymic or surname. Needs a selector for capitalisation — the
     plan has none (selectors: span type, lemma, grammemes, token kind).
-  - [ ] **Surname that is also a place name.** After given + patronymic,
+  - [x] **Surname that is also a place name.** After given + patronymic,
     a word that won resolution as `settlement` without a settlement
     keyword before it («Анна Петрова Головина», the gazetteer has the
     village «Головино») is a surname: relabel, the settlement reading
     stays in `Alternatives`.
-  - [ ] **Given-name reading in the patronymic slot.** «Алексей Степанов
+  - [x] **Given-name reading in the patronymic slot.** «Алексей Степанов
     Сидоров» where «Степанов» resolved as a form of the given name
     «Степан»: the second word of a name sequence is a patronymic.
-  - [ ] **Several persons in one sentence.** Metric records list parents
+  - [x] **Several persons in one sentence.** Metric records list parents
     and godparents in one sentence, sometimes back to back with no
     separator. Every person must match on its own — revisit Q-v03-2
     (greedy `any*` binds the last name pair) and Q-v03-8 (repeated role
     captures after «восприемники:»).
-  - [ ] **Golden cases** for each item above, in pre-reform and modern
+  - [x] **Golden cases** for each item above, in pre-reform and modern
     spelling (synthetic fixtures; the real texts stay outside the repo).
 
   Relations and `age` facts ship in the same milestone as planned but do
@@ -113,10 +115,25 @@ Settled as defaults during v0.2 and open to revisit (see
   that name; since the 2026-09-26 review it also applies to a trigger that
   boosts a gazetteer span. Owner to confirm the name. Scenario 16.
 
+## Open questions (from v0.4)
+
+Carried over from [implementation/v0.4-patterns.md](implementation/v0.4-patterns.md#open-questions).
+
+- [ ] **Q-v03-2. Lazy repetitions.** `*?` is not supported; repetitions are
+  greedy. Needed for relation lists? Scenario 23.
+- [ ] **Q-v03-4. Facts in golden sets.** `nertest` scores spans only; add
+  fact cases to the JSONL? Scenario 25.
+- [ ] **Q-v03-8. Repeated role captures.** A repeated `role` keeps its last
+  repetition; «восприемники: …» needs all of them. Scenarios 23, 25.
+- [ ] **Q-v03-10. Agreed normal forms** — see the follow-up below.
+- [ ] **Q-v04-1. `Predicted` on composite spans.** Should a span created by
+  `label` take `Predicted` only from words outside its nested parts? Changing
+  it changes output flags: ⚠ re-extract. Scenario 24.
+
 ## Follow-ups
 
 - [ ] **Agreed normal forms** — see
-  [patterns plan Q-v03-10](plans/2026-09-24-v0.3-patterns.md#open-questions):
+  [Q-v03-10](implementation/v0.4-patterns.md#open-questions):
   «Калужская губерния» instead of lemma sequences for spans without
   dictionary hits. The API question is settled (0.3: `Registry.Inflect`,
   D29); left: the head-word/agreement rule for multi-word spans and how
@@ -129,9 +146,6 @@ Settled as defaults during v0.2 and open to revisit (see
   (14.9 MB) and terms change — ⚠ reindex, owner decision. On such a file
   «край» had no `sing gent` form through gomorphy `Inflect` (checked
   2026-10-01); recheck `Registry.Inflect` on it before switching.
-- [ ] **Span end over an abbreviation dot** (v0.4): a span ending in a
-  dotted abbreviation excludes the dot («Калужской губ»); extend it over
-  the dot. Changes span ends: update the golden sets. Scenario 15.
 - [ ] **`ner` integration test against the real base** (`-tags
   integration`), like v0.1's `Analyzer` one.
 - [ ] **Negative triggers and trigger candidates**: a negative trigger

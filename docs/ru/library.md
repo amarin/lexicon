@@ -364,6 +364,7 @@ type RuleSet struct {
     When     []string  // `when:` — активен, когда у документа есть ВСЕ эти теги; пусто — всегда
     Hints    []Hint
     Triggers []Trigger
+    Patterns []Pattern // `patterns:` (0.4)
 }
 ```
 
@@ -398,9 +399,44 @@ type RuleSet struct {
 перекрывающих спанов газетира. Кандидат не предлагается на диапазоне,
 пересекающем совпадение с `Blocked` того же типа.
 
+**Паттерны** *(0.4, не выпущено)* — последовательности по термам и спанам-кандидатам
+([сценарий 23](scenarios.md#23-последовательные-паттерны)):
+
+```go
+type Pattern struct {
+    Name     string    // `name:` — required, appears in evidence and Fact.Rule
+    Elements []Element // `elements:`
+    Actions  []Action  // `actions:` — exactly one of relabel, boost, label, emit each
+}
+type Element struct {
+    Type, Lemma, Grammeme, Token string // alternatives with "|"
+    Shape  Shape     // `shape: {case, script}`
+    Not    *Element  // `not:` — type, lemma, grammeme, token, shape only
+    Any    bool      // `any: true` — one term, no other condition
+    Group  []Element // `group:` — no conditions next to it
+    Repeat Repeat    // `repeat:` "?", "*", "+" — quoted in YAML
+    Role   string    // `role:`
+}
+type Relabel struct { Role, Type string; Weight float32 } // role bound to a type element
+type Boost   struct { Role string; Weight float32 }
+type Label   struct { Role, Type string; Weight float32 } // role bound to a group or a term element
+type Emit    struct { Kind string; Args map[string]string } // fact role → pattern role (a span)
+```
+
+`Weight` по умолчанию 1. `Compile` отвергает: элемент без условий, `any` с
+другими условиями, `group` с условиями, неизвестный вид токена или форму,
+`not` вместе с `role`/`repeat`/`group`/`any`/`not`, действие над неизвестной
+ролью, `relabel` над ролью, не привязанной к элементу `type`, `label` над
+ролью, привязанной к нему, `boost` или аргумент `emit` над ролью, которая
+не спан. Ошибки читаются как `<файл>:<строка>: <набор>/pattern "<имя>":
+<сообщение>` со строкой проблемного элемента.
+
+`Program`, `Lattice`, `LatticeSpan`, `Capture` и `PatternMatch` — то, чем
+`ner` выполняет паттерны; хосту они не нужны.
+
 | Метод `Book` | |
 |---|---|
-| `Active(tags) Active` | подсказки и триггеры наборов, все теги `When` которых есть в `tags`, в порядке файлов и наборов; общие, не изменяйте |
+| `Active(tags) Active` | подсказки, триггеры и паттерны наборов, все теги `When` которых есть в `tags`, в порядке файлов и наборов; общие, не изменяйте |
 | `Sets() []string` | имена наборов по порядку |
 | `Version() string` | меняется при изменении любого правила или значения meta |
 
@@ -433,8 +469,14 @@ type Doc struct {
     Types   []string // фильтр результата, после разрешения
 }
 type Result struct {
-    Spans   []Span // по Start, затем длинные первыми, затем по Type
+    Spans   []Span // по Start, затем длинные первыми, затем размеченный спан раньше своей части на том же диапазоне, затем по Type
+    Facts   []Fact // из паттернов (0.4); каждый аргумент — спан этого Result
     Version string // экстрактор, анализатор, снимок газетира, правила, конфигурация
+}
+type Fact struct {
+    Kind string
+    Args map[string]int // роль факта → индекс в Result.Spans
+    Rule string         // имя паттерна
 }
 type Span struct {
     Start, End         int // байты в Doc.Text; Doc.Text[Start:End] == Surface
@@ -452,9 +494,11 @@ type Span struct {
 
 `Extract` выполняет: разбор (`ModeFull`) → совпадения газетира → фильтры
 (`Blocked`, `CaseSensitive`, короткие совпадения по лемме) → подсказки →
-триггеры → фильтр `RequiresContext` → оценка → взвешенное планирование
-интервалов (без пересечений; вложенность только для пар из
-`Config.Nesting`) → фильтр `Doc.Types`. Оценка = (вес происхождения +
+триггеры → паттерны → фильтр `RequiresContext` → оценка → взвешенное
+планирование интервалов (без пересечений; вложенность только для пар из
+`Config.Nesting`, где спан, созданный паттерном `label`, может содержать
+внутренний спан и на своём диапазоне целиком) → фильтр `Doc.Types` →
+факты. Оценка = (вес происхождения +
 `Types[type]`) × слова + `LengthBonus` × (слова − 1) + вклад подсказок и
 триггеров − `AmbiguityPenalty` × (max(различные ссылки, различные
 нормальные формы, 1) − 1), с округлением до 1e-6; кандидаты с оценкой 0
@@ -471,7 +515,13 @@ type Span struct {
 по поверхностной форме); `Abbrev`, `Candidate`, `Nested`. `Normal`
 кандидата от триггера — последовательности лемм его слов в нижнем
 регистре (без поглощённого ключевого слова, не больше
-`gazetteer.MaxLemmaKeys`).
+`gazetteer.MaxLemmaKeys`). Спан, созданный паттерном, оценивается с весом
+происхождения триггера плюс веса действий. `Normal` размеченного спана с
+вложенными частями склеивает первые нормальные формы частей (у прочих слов —
+их лемму). Спан, чьё последнее слово — сокращение с точкой, кончается после
+точки. Размеченный спан — не поверхностное совпадение, поэтому он
+`Predicted`, если у какого-то покрытого слова только предсказанные леммы
+([сценарий 24](scenarios.md#24-персона-одним-спаном)).
 
 `New` возвращает ошибку при nil `Analyzer` или `Gazetteer` и при
 `DefaultProfile`, которого нет в `Profiles`; карты хоста он копирует.

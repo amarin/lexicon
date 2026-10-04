@@ -2,7 +2,7 @@ package ner
 
 // Alternative is a reading of a span's range that did not win: another type
 // that lost resolution on the same range, or the type a pattern relabelled
-// away from (v0.3). Alternatives never make a span Ambiguous by themselves;
+// away from (v0.4). Alternatives never make a span Ambiguous by themselves;
 // only a tie does (D7).
 type Alternative struct {
 	Type     string

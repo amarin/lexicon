@@ -20,8 +20,9 @@ a document:
   by grammemes and agreement with a count («5 уездов») *(0.3.0)*.
 - **Dictionary NER** *(0.2.0)*. Multi-word aliases matched by
   lemmas or surface forms, variant groups, abbreviation hints, trigger
-  words, and rule sets switched on by document tags; pattern rules
-  *(planned: 0.4)*. Overlapping matches are resolved, and every span can
+  words, and rule sets switched on by document tags; sequence patterns that
+  retype, create and group spans — a person as one span over its name parts —
+  and emit facts *(0.4, unreleased)*. Overlapping matches are resolved, and every span can
   explain why it was produced. A golden-set harness measures precision and
   recall per entity type.
 - **Dictionaries as data.** Morphology dictionaries are gomorphy `.dat` or
@@ -58,8 +59,8 @@ tokenization, the dictionary `Registry`, and the `Analyzer` (`ModeIndex`,
 
 0.2.0 is released: dictionary NER — `gazetteer`, `rules`, `ner`, `nertest`,
 and the `lexicon extract`/`lexicon golden` CLI commands, with rule sets
-scoped by document tags (`When`, `Book.Active`). Pattern-based facts are
-planned for 0.4 — see the [roadmap](docs/todo.md).
+scoped by document tags (`When`, `Book.Active`). Patterns and facts (0.4) are
+implemented and not yet released — see the [roadmap](docs/todo.md).
 
 0.3.0 is released: word forms by grammemes — `Registry.Inflect` and
 `NumeralGrammemes`.

@@ -609,8 +609,10 @@ from the sections above, **these win**:
   `Result.Version` also hashes weights, nesting and min-runes (alternatives add
   no configuration, so they do not change it).
 - v0.4 patterns run over the pre-resolution candidate lattice, per sentence,
-  leftmost-first, non-overlapping; `Relabel` on a token capture creates a
-  candidate span (so «N лет» can be a fact argument); `Fact` gains `Rule`.
+  leftmost-first, non-overlapping; the action `label` creates a candidate
+  span over a token or group capture (so «N лет» can be a fact argument and a
+  person is one span over its parts — [v0.4 design](2026-10-04-v0.4-patterns-design.md),
+  which wins where it differs); `Fact` gains `Rule`.
   `Relabel` of a span (owner decision 2026-09-24): an existing candidate of the
   new type on the same range wins with its own refs; otherwise the span is
   retyped in place with empty `Refs` and lemma-sequence normal forms. Either

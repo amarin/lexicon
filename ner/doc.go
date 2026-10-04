@@ -9,7 +9,9 @@
 // pins one gazetteer snapshot. Only the snapshot is pinned: the analyzer
 // (and the dictionary registry behind it) is live, and the snapshot may have
 // been compiled with an older analyzer until the host calls
-// Gazetteer.Refresh.
+// Gazetteer.Refresh. Rule patterns run after triggers; spans they create with
+// label can hold their parts (Config.Nesting), and facts they emit are in
+// Result.Facts.
 //
 // What each feature is for, with runnable examples:
 // https://github.com/amarin/lexicon/blob/main/docs/en/scenarios.md#15-find-entities-with-dictionaries

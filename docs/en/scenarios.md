@@ -55,7 +55,10 @@ gazetteers and rules are tiny TSVs and YAML strings in code.
 | 20 | [Try NER by hand](#20-try-ner-by-hand) | 0.2.0 | CLI `extract`, `golden` |
 | 21 | [Share dictionaries with the gomorphy CLI](#21-share-dictionaries-with-the-gomorphy-cli) | 0.1.0 | CLI `dicts list`, `gomorphy lookup` |
 | 22 | [Word forms and number agreement](#22-word-forms-and-number-agreement) | 0.3.0 | [inflect](../../examples/inflect/main.go), `ExampleRegistry_Inflect`, `ExampleNumeralGrammemes` |
-| — | [Planned: patterns](#planned-patterns) | 0.4 | — |
+| 23 | [Sequence patterns](#23-sequence-patterns) | 0.4 (unreleased) | [persons](../../examples/persons/main.go) |
+| 24 | [A person as one span](#24-a-person-as-one-span) | 0.4 (unreleased) | [persons](../../examples/persons/main.go) |
+| 25 | [Facts from patterns](#25-facts-from-patterns) | 0.4 (unreleased) | [persons](../../examples/persons/main.go) |
+| — | [Planned](#planned) | — | — |
 
 ## 1. Compare words across orthographies
 
@@ -439,7 +442,7 @@ Extracted spans have their own version, `ner.Result.Version`
 
 | Part | Changes when | Example value |
 |---|---|---|
-| extractor version | NER rules of the library change spans (⚠ re-extract) | `ner-2` |
+| extractor version | NER rules of the library change spans (⚠ re-extract) | `ner-3` |
 | gazetteer snapshot | a source is recompiled from new content or with a new analyzer | a hash |
 | rule book | rule files change | a hash |
 | pipeline configuration | profiles, weights, nesting, `MinLemmaMatchRunes` change | a hash |
@@ -459,6 +462,9 @@ page names the part it bumps.
 - 0.2.1 — extractor version `ner-2`: the `abbrev` flag fix
   ([scenario 9](#9-abbreviations-of-records)) changes span flags and
   sentence ends (⚠ re-extract).
+- 0.4 (unreleased) — extractor version `ner-3`: a span ending in a dotted
+  abbreviation includes the dot ([scenario 15](#15-find-entities-with-dictionaries);
+  ⚠ re-extract).
 
 ## 14. Inspect by hand
 
@@ -545,12 +551,13 @@ host's job.
 - An alias matches only consecutive words with no punctuation between
   them («Большой, Лес» does not match «Большой Лес»); an abbreviation's own
   dot is skipped.
-- A span ending in a dotted abbreviation excludes the dot («Калужской губ»,
-  not «Калужской губ.»); extending the span over the dot is planned for 0.4.
 - Variant groups (aliases sharing a `Ref`) are not used by extraction: a
   span's `Normal` comes from the `Canonical` fields of its matched entries
   ([scenario 18](#18-keep-gazetteers-current-without-a-restart)).
 - The interner behind compiled aliases is process-wide and never shrinks.
+
+**History:**
+- 0.4: a span ending in a dotted abbreviation includes the dot («Калужской губ.»). Before 0.4 it excluded it. ⚠ re-extract.
 
 ## 16. Context words, triggers and document tags
 
@@ -632,7 +639,9 @@ found.
 **How.** `Extract` resolves candidates by weighted interval scheduling:
 no two output spans cross, and a span may lie inside another only for an
 outer/inner type pair listed in `Config.Nesting` (the inner one gets the
-`Nested` flag). A candidate's score is a weighted sum
+`Nested` flag). A span created by a pattern `label` may hold an allowed span
+on its own whole range (a one-word person and its surname); two dictionary
+spans on one range still compete. *(0.4, unreleased)* A candidate's score is a weighted sum
 (`ner.Weights`, `DefaultWeights()` when zero): per word the origin weight
 (surface 3, lemma 2, trigger 1) plus the type weight, a length bonus per
 word beyond the first (0.5), the hint and trigger evidence, minus the
@@ -856,16 +865,173 @@ heading («Уезд» → «Уезды»), a label that agrees with a count («1
 
 **Available since:** 0.3.0.
 
-## Planned: patterns
+## 23. Sequence patterns
 
-Not available yet; the design is in the
-[spec](../specs/2026-09-24-lexicon-design.md), the steps in the
-[plan](../plans/2026-09-24-v0.3-patterns.md).
+**Task.** Say what a word is by what stands around it: after a given name
+and a patronymic a village name is a surname; in a peasant record the word
+after the given name is a patronymic; an unknown capitalised word between
+name words is part of the name.
 
-- **0.4** — sequence patterns over spans, lemmas and grammemes with
-  actions (relabel, boost, emit a fact) in the rule sets of
-  [scenario 16](#16-context-words-triggers-and-document-tags); a span
-  ending in an abbreviation extended over its dot.
+**How.** A rule set has `patterns:` next to `hints:` and `triggers:`. A
+pattern is a sequence of `elements` and a list of `actions`.
+- An element with `type` consumes one candidate span of that type (several
+  types: `type: surname|patronymic`). Without `type` it consumes one term:
+  `lemma: сын|дочь`, `grammeme: Name`, `token: word|number|punct|symbol`,
+  `shape: {case: title, script: cyrillic}`, or `any: true`. Conditions on
+  one element all have to hold; next to `type` they are checked on every
+  word of the span.
+- `not:` is a condition that must not match at the same position:
+  `not: {type: given_name}` — no given-name candidate starts here.
+- `group:` nests a sequence; `repeat: "?"`, `"*"`, `"+"` (quoted, greedy)
+  repeats an element or a group; `role:` names what the element consumed.
+- Actions: `relabel: {role, type}` retypes a span — the previous reading
+  stays in `Span.Alternatives`, and a dictionary record of the new type on
+  the same words wins with its refs; `boost: {role, weight}` adds evidence;
+  `label: {role, type}` creates a span over the captured words (flag
+  `Candidate` unless it covers spans the pattern consumed); `emit` records
+  a fact (scenario 25).
+
+```yaml
+sets:
+  - name: persons
+    patterns:
+      - name: place-as-surname
+        elements:
+          - {type: given_name}
+          - {type: patronymic}
+          - {type: division, shape: {case: title}, role: s}
+        actions:
+          - relabel: {role: s, type: surname}
+      - name: unknown-patronymic
+        elements:
+          - {type: given_name}
+          - {token: word, shape: {case: title}, not: {type: given_name|patronymic|surname}, role: p}
+          - {type: surname}
+        actions:
+          - label: {role: p, type: patronymic}
+```
+
+Patterns run after triggers, before overlaps are resolved, so they see
+every candidate reading of a word. They apply in file order, each on what
+the previous one left: put patterns that fix parts before patterns that
+use them. A pattern never crosses a sentence end; its matches do not
+overlap; the leftmost match wins and repetitions are greedy. Errors name
+the place: `file.yaml:12: persons/pattern "person": …`.
+
+**Example:** [persons](../../examples/persons/main.go); CLI `extract
+--rules`.
+
+**Available since:** 0.4 (unreleased).
+
+**Behaviour in 0.4:**
+- A repeated `role` keeps its last repetition; there are no lazy
+  repetitions ([todo](../todo.md)).
+- A slot for an unknown word belongs after a name element, never first in
+  a pattern: the first word of a sentence is capitalised too.
+- `type` next to `shape` skips a span that absorbed a lower-case keyword
+  («дер. Головина»).
+
+## 24. A person as one span
+
+**Task.** Get «Иван Петров Сидоров» as one mention with its parts — given
+name, patronymic, surname — each with its own dictionary reference, also
+when two persons stand back to back and when a person is one surname after
+«ответчик».
+
+**How.** Name parts are spans of your own types. A pattern groups them and
+labels the group; the host allows the parts inside the whole:
+
+```yaml
+      - name: person
+        elements:
+          - group:
+              - {type: given_name}
+              - {type: patronymic|surname}
+              - {type: surname, repeat: "?"}
+            role: who
+        actions:
+          - label: {role: who, type: person}
+      - name: person-by-defining-word
+        elements:
+          - {lemma: крестьянин|мещанин|ответчик|истец}
+          - group:
+              - {type: surname}
+            role: who
+        actions:
+          - label: {role: who, type: person}
+```
+
+```go
+ner.Config{Nesting: map[string][]string{"person": {"given_name", "patronymic", "surname"}}}
+```
+
+The person span has no `Refs`; its `Normal` joins the normal forms of its
+parts. The parts follow it in `Result.Spans` with the flag `Nested`; the
+type of a part is its role. A one-word person («ответчик Сидоров») covers
+the name alone, with the surname nested on the same range. Without the
+`Nesting` pairs you get the parts and no person. Each person is one match,
+so «Иван Петров Сидоров Анна Михайлова Кузнецова» gives two persons.
+
+A complete rule set with golden cases:
+[persons.rules.yaml](../../nertest/testdata/persons.rules.yaml),
+[persons.jsonl](../../nertest/testdata/persons.jsonl).
+
+**Example:** [persons](../../examples/persons/main.go); CLI `extract --ortho prereform
+--rules persons.yaml --nest 'person>given_name' --nest 'person>surname'`.
+
+**Available since:** 0.4 (unreleased).
+
+**Behaviour in 0.4:**
+- Whether one name word is a person is your rule set's choice: write a
+  pattern with a defining word. A lone given name stays a `given_name`.
+- A person span is not a surface match, so it carries `Predicted` when one
+  of its words is known only by predicted lemmas, even when the nested part
+  over that word is a surface match without the flag
+  ([todo](../todo.md), Q-v04-1).
+- A part that a pattern created from an unknown word is a `Candidate`
+  without `Refs`; a part that was relabelled keeps its previous reading in
+  `Alternatives` (a surname that is also a village).
+
+## 25. Facts from patterns
+
+**Task.** Get «дочь X» and «N лет» as plain data pointing at spans, and
+build your own relations from it.
+
+**How.** `emit: {kind, args}` records a fact; `args` maps your fact roles
+to pattern roles. A role must be a span: bound to a `type` element, or
+labelled or relabelled earlier in the same pattern.
+
+```yaml
+      - name: age
+        elements:
+          - {type: person|given_name, role: person}
+          - {token: punct, repeat: "?"}
+          - {token: number, role: age}
+          - lemma: год
+        actions:
+          - label: {role: age, type: age}
+          - emit: {kind: age, args: {person: person, age: age}}
+```
+
+`Result.Facts` holds `Fact{Kind, Args, Rule}`; `Args` are indexes into
+`Result.Spans`, `Rule` is the pattern name. A fact is dropped when one of
+its spans did not make it to the output (lost an overlap, filtered by
+`Doc.Types`); equal facts are reported once.
+
+**Example:** [persons](../../examples/persons/main.go); CLI `extract`
+prints fact rows.
+
+**Available since:** 0.4 (unreleased).
+
+**Behaviour in 0.4:**
+- A list after one keyword («восприемники: …») yields one fact per match,
+  not one fact with a list ([todo](../todo.md)).
+- `nertest` golden sets score spans only, not facts.
+
+## Planned
+
+Not available yet.
+
 - **Under consideration** (not scheduled) — agreed normal forms for spans
   without dictionary hits: «Калужская губерния» instead of the lemma
   sequence «калужский губерния», through the inflection of
