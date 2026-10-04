@@ -39,10 +39,23 @@ func (s *state) span(text string, c *candidate) Span {
 	if len(sp.Refs) > 1 || len(sp.Normal) > 1 {
 		sp.Flags |= Ambiguous
 	}
+	// A labelled span with nested parts takes Ambiguous and Predicted only
+	// from the words outside its parts: a part settled its own words and
+	// carries their flags itself (decision P12).
+	var parts []*candidate
+	if c.labelled {
+		parts = c.parts
+	}
 	for p := c.start; p < c.end; p++ {
 		t := s.term(p)
 		if hasLemmaFlag(t, lexicon.FlagAbbrev) {
 			sp.Flags |= Abbrev
+		}
+		for len(parts) > 0 && parts[0].end <= p {
+			parts = parts[1:]
+		}
+		if len(parts) > 0 && parts[0].start <= p {
+			continue
 		}
 		// Of the covered words, only an ambiguous abbreviation («с.»: село
 		// or сын) makes the span ambiguous; ordinary homonymy of a word
@@ -118,10 +131,10 @@ func (s *state) composeNormal(c *candidate) string {
 }
 
 // output orders spans (Start asc, End desc, a labelled span before its
-// same-range part, Type), applies the Types filter
-// and returns the index of every kept candidate in the result. Extract
-// ignores the index map for now; it is reserved for v0.3 facts, which
-// refer to spans by their position in Result.Spans.
+// same-range part), applies the Types filter and returns the index of
+// every kept candidate in the result: facts refer to spans by their
+// position in Result.Spans. chosen lists every span before the spans
+// nested in it, as resolve returns it.
 func (s *state) output(text string, chosen []*candidate, nested map[*candidate]bool, types []string) ([]Span, map[*candidate]int) {
 	all := make([]Span, len(chosen))
 	for i, c := range chosen {
@@ -142,11 +155,9 @@ func (s *state) output(text string, chosen []*candidate, nested map[*candidate]b
 		if x.End != y.End {
 			return x.End > y.End
 		}
-		// One range: a labelled span is the outer one of its nested part.
-		if lx, ly := chosen[order[a]].labelled, chosen[order[b]].labelled; lx != ly {
-			return lx
-		}
-		return x.Type < y.Type
+		// One range: a labelled span and its nested part. chosen lists a span
+		// before the spans nested in it.
+		return order[a] < order[b]
 	})
 	var spans []Span
 	index := map[*candidate]int{}

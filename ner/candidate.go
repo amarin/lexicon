@@ -19,7 +19,8 @@ type candidate struct {
 	evidence   []string
 	absorbed   []int // keyword positions a rule absorbed into the range
 	removed    bool
-	labelled   bool // created by a pattern label (decision P12)
+	labelled   bool       // created by a pattern label (decision P12)
+	replacedBy *candidate // the candidate a pattern relabel replaced this removed one with; facts follow it
 	score      float64
 	alts       []*candidate // other readings of this range (D14): resolution losers, pattern relabel sources
 	parts      []*candidate // the spans chosen directly inside it, in text order (set by resolve)

@@ -6,10 +6,13 @@ import (
 )
 
 // resolver runs weighted interval scheduling with nesting. all is sorted
-// by end position; memo caches the best selection inside each candidate.
+// by end position; order is the creation order of the candidates (their
+// index in state.cands); memo caches the best selection inside each
+// candidate.
 type resolver struct {
 	nesting map[string]map[string]bool
 	all     []*candidate
+	order   map[*candidate]int
 	memo    map[*candidate]*selection
 }
 
@@ -48,10 +51,12 @@ func (r *resolver) schedule(cs []*candidate) *selection {
 
 // inner returns the best selection inside c among the types allowed by
 // Nesting[c.typ]: candidates strictly shorter than c, and — when c was
-// created by a pattern label — also non-labelled candidates on c's whole
-// range (decision P13: a one-word person keeps its surname part). A
-// labelled candidate is never the same-range inner of another one, so the
-// recursion ends.
+// created by a pattern label — also candidates on c's whole range that are
+// not labelled, or labelled and created before c (decision P13: a one-word
+// person keeps its surname part, a dictionary one or one an earlier pattern
+// labelled). A same-range labelled inner is always older than its outer and
+// a non-labelled one has no same-range inner, so the chain is finite and
+// the recursion ends.
 func (r *resolver) inner(c *candidate) *selection {
 	if sel, ok := r.memo[c]; ok {
 		return sel
@@ -66,7 +71,7 @@ func (r *resolver) inner(c *candidate) *selection {
 			if x == c || !allowed[x.typ] || x.start < c.start || x.end > c.end {
 				continue
 			}
-			if x.words() < c.words() || (c.labelled && !x.labelled) {
+			if x.words() < c.words() || (c.labelled && (!x.labelled || r.order[x] < r.order[c])) {
 				in = append(in, x)
 			}
 		}

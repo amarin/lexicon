@@ -1,6 +1,9 @@
 package ner
 
-import "sort"
+import (
+	"slices"
+	"sort"
+)
 
 // resolve selects the output candidates. Order of equal-end candidates is
 // deterministic: start desc, score desc, type asc, creation order.
@@ -29,7 +32,7 @@ func (s *state) resolve() ([]*candidate, map[*candidate]bool) {
 		}
 		return order[a] < order[b]
 	})
-	r := &resolver{nesting: s.p.nesting, all: live, memo: map[*candidate]*selection{}}
+	r := &resolver{nesting: s.p.nesting, all: live, order: order, memo: map[*candidate]*selection{}}
 	var chosen []*candidate
 	nested := map[*candidate]bool{}
 	var walk func(sel *selection, inside bool)
@@ -52,7 +55,10 @@ func (s *state) resolve() ([]*candidate, map[*candidate]bool) {
 // attachAlternatives keeps every live loser on a winner's exact range with
 // another type as an alternative of the winner (D14) and flags ties (D7).
 // Two candidates on one range both win only as a labelled span and its
-// nested part (P13); those are not alternatives of each other. Live candidates are bucketed by range, keeping
+// nested part (P13); those are not alternatives of each other, and the
+// other readings of the range compete with the part: a labelled winner
+// that holds a part on its whole range gets no alternatives and no tie
+// flag, the part gets them. Live candidates are bucketed by range, keeping
 // their live order within a bucket.
 func (s *state) attachAlternatives(chosen, live []*candidate) {
 	byRange := make(map[[2]int][]*candidate, len(live))
@@ -65,6 +71,9 @@ func (s *state) attachAlternatives(chosen, live []*candidate) {
 		won[c] = true
 	}
 	for _, c := range chosen {
+		if c.labelled && slices.ContainsFunc(c.parts, func(p *candidate) bool { return p.start == c.start && p.end == c.end }) {
+			continue
+		}
 		for _, o := range byRange[[2]int{c.start, c.end}] {
 			if o == c || o.typ == c.typ || won[o] {
 				continue

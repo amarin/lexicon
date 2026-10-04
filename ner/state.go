@@ -15,9 +15,10 @@ type state struct {
 	terms   []lexicon.Term
 	explain bool
 	cands   []*candidate
-	idx     *posIndex     // gazetteer candidates by position, built by index()
-	facts   []pendingFact // recorded by pattern emit actions
-	blocked []*candidate  // candidates filterEarly vetoed for their type (gazetteer.Blocked); their ranges never change
+	idx     *posIndex      // gazetteer candidates by position, built by index()
+	byStart [][]*candidate // candidates by start position, in creation order; kept by the pattern stage
+	facts   []pendingFact  // recorded by pattern emit actions
+	blocked []*candidate   // candidates filterEarly vetoed for their type (gazetteer.Blocked); their ranges never change
 }
 
 func (s *state) term(pos int) *lexicon.Term { return &s.terms[s.tx.TermIndex(pos)] }

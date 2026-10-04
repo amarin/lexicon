@@ -17,11 +17,13 @@ func FuzzExtractOffsets(f *testing.F) {
 		"Иван Петров Сидоров Анна Михаилова Кузнецова",
 		"Анна Петрова деревни Головина, 25 лет.",
 		"отвѣтчикъ Сидоровъ; крест. Иванъ Лаптевъ.",
+		"Мария, дочь Ивана Петрова, 25 лет",
 	} {
 		f.Add(seed)
 	}
 	places, _ := newPipeline(f, testEntries(), placesRules)
-	pipelines := []*Pipeline{places, personsPipeline(f, true)}
+	facts, _ := newPipeline(f, testEntries(), factRules, personNesting)
+	pipelines := []*Pipeline{places, personsPipeline(f, true), facts}
 	f.Fuzz(func(t *testing.T, text string) {
 		if !utf8.ValidString(text) {
 			t.Skip()

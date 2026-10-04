@@ -206,3 +206,52 @@ func TestLabelOverSpansIsNotCandidate(t *testing.T) {
 	p, _ = newPipeline(t, testEntries(), personOverNames)
 	assertBrief(t, extract(t, p, Doc{Text: "Иван Петров"}).Spans, "given_name:Иван", "surname:Петров")
 }
+
+// A part that requires context (a surname that is also a common word) is
+// kept when a pattern assembles a span over it: the match is its context.
+func TestLabelGivesContextToParts(t *testing.T) {
+	p, _ := newPipeline(t, testEntries(), personOverNames, personNesting)
+	res := extract(t, p, Doc{Text: "Иван Мороз"}, Explain())
+	assertBrief(t, res.Spans, "person:Иван Мороз", "given_name:Иван", "surname:Мороз")
+	if who := res.Spans[0]; !reflect.DeepEqual(who.Normal, []string{"Иван Мороз"}) {
+		t.Fatalf("person = %+v", who)
+	}
+	sur := res.Spans[2]
+	if !reflect.DeepEqual(sur.Refs, []string{"surname:2"}) || !slices.Contains(sur.Evidence, "pattern person gives context") {
+		t.Fatalf("surname = %+v", sur)
+	}
+	// No pattern match, no context.
+	assertBrief(t, extract(t, p, Doc{Text: "ударил мороз"}).Spans)
+}
+
+// Patterns run per sentence: a match in a later sentence gets offsets into
+// the whole text.
+func TestPatternInLaterSentence(t *testing.T) {
+	p, _ := newPipeline(t, testEntries(), patternRules)
+	const text = "Он пришёл. Иван Петров, 25 лет"
+	res := extract(t, p, Doc{Text: text})
+	assertBrief(t, res.Spans, "given_name:Иван", "surname:Петров", "age:25")
+	age := res.Spans[2]
+	start := strings.Index(text, "25")
+	if age.Start != start || age.End != start+2 || age.RuneStart != 24 || age.RuneEnd != 26 || text[age.Start:age.End] != "25" {
+		t.Fatalf("age = %+v", age)
+	}
+}
+
+// Doc.Types filters the output after resolution: without the person its
+// parts stay (still Nested), without the parts the person stays.
+func TestTypesFilterOnComposite(t *testing.T) {
+	p, _ := newPipeline(t, testEntries(), personOverNames, personNesting)
+	res := extract(t, p, Doc{Text: "Иван Петров", Types: []string{"given_name", "surname"}})
+	assertBrief(t, res.Spans, "given_name:Иван", "surname:Петров")
+	for _, sp := range res.Spans {
+		if !sp.Flags.Has(Nested) {
+			t.Fatalf("part = %+v", sp)
+		}
+	}
+	res = extract(t, p, Doc{Text: "Иван Петров", Types: []string{"person"}})
+	assertBrief(t, res.Spans, "person:Иван Петров")
+	if who := res.Spans[0]; who.Flags.Has(Nested) || !reflect.DeepEqual(who.Normal, []string{"Иван Петров"}) {
+		t.Fatalf("person = %+v", who)
+	}
+}

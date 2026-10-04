@@ -15,6 +15,12 @@ func (s *state) applyPatterns(progs []*rules.Program) {
 	if len(progs) == 0 {
 		return
 	}
+	s.byStart = make([][]*candidate, s.tx.Len())
+	for _, c := range s.cands {
+		if !c.removed {
+			s.byStart[c.start] = append(s.byStart[c.start], c)
+		}
+	}
 	sentences := s.tx.Sentences()
 	for _, prog := range progs {
 		starts := s.latticeSpans()
@@ -25,6 +31,18 @@ func (s *state) applyPatterns(progs []*rules.Program) {
 			}
 		}
 	}
+}
+
+// at returns the live candidate of typ over positions [a, b), the first in
+// creation order, or nil. It reads state.byStart, so it is valid during the
+// pattern stage only.
+func (s *state) at(typ string, a, b int) *candidate {
+	for _, o := range s.byStart[a] {
+		if !o.removed && o.typ == typ && o.end == b {
+			return o
+		}
+	}
+	return nil
 }
 
 // act runs the actions of one match in order.
@@ -85,18 +103,17 @@ func (s *state) relabel(rule string, c *candidate, r *rules.Relabel) *candidate 
 		s.note(c, "pattern %s keeps %s", rule, r.Type)
 		return c
 	}
-	for _, o := range s.cands {
-		if o != c && !o.removed && o.typ == r.Type && o.start == c.start && o.end == c.end {
-			// The target type's own gazetteer hits (refs) win; the source
-			// reading becomes an alternative.
-			c.removed = true
-			s.note(c, "relabelled by pattern %s", rule)
-			o.alts = append(o.alts, c)
-			o.bonus += w
-			o.context = true
-			s.note(o, "pattern %s relabel %s → %s (existing)", rule, c.typ, r.Type)
-			return o
-		}
+	if o := s.at(r.Type, c.start, c.end); o != nil {
+		// The target type's own gazetteer hits (refs) win; the source
+		// reading becomes an alternative.
+		c.removed = true
+		c.replacedBy = o
+		s.note(c, "relabelled by pattern %s", rule)
+		o.alts = append(o.alts, c)
+		o.bonus += w
+		o.context = true
+		s.note(o, "pattern %s relabel %s → %s (existing)", rule, c.typ, r.Type)
+		return o
 	}
 	if s.vetoed(r.Type, c.start, c.end) {
 		s.note(c, "pattern %s: %s is blocked here", rule, r.Type)
@@ -119,20 +136,21 @@ func (s *state) relabel(rule string, c *candidate, r *rules.Relabel) *candidate 
 
 // label implements decision P12: a candidate of lb.Type over the terms cp
 // captured. It returns the candidate now bound to the role, or nil when
-// the range has no content word or the type is blocked there.
+// the range has no content word or the type is blocked there. The
+// candidates the match consumed inside the range are its parts: the match
+// is their context, so a RequiresContext part survives filterContext.
 func (s *state) label(rule string, l *lattice, m rules.PatternMatch, cp rules.Capture, lb *rules.Label) *candidate {
 	a, b, ok := s.positions(l.t0+cp.Start, l.t0+cp.End)
 	if !ok || s.vetoed(lb.Type, a, b) {
 		return nil
 	}
 	w := float64(lb.Weight)
-	for _, o := range s.cands {
-		if !o.removed && o.typ == lb.Type && o.start == a && o.end == b {
-			o.bonus += w
-			o.context = true
-			s.note(o, "pattern %s keeps %s", rule, lb.Type)
-			return o
-		}
+	if o := s.at(lb.Type, a, b); o != nil {
+		o.bonus += w
+		o.context = true
+		s.note(o, "pattern %s keeps %s", rule, lb.Type)
+		s.supportParts(rule, m, o)
+		return o
 	}
 	nc := &candidate{
 		start: a, end: b, typ: lb.Type, origin: originPattern,
@@ -140,15 +158,32 @@ func (s *state) label(rule string, l *lattice, m rules.PatternMatch, cp rules.Ca
 	}
 	// A span over candidates the match consumed is a composite of known
 	// parts, not a guess.
-	for _, id := range m.Spans {
-		if c := s.cands[id]; c.start >= a && c.end <= b {
-			nc.flags &^= Candidate
-			break
-		}
+	if s.supportParts(rule, m, nc) {
+		nc.flags &^= Candidate
 	}
 	s.note(nc, "labelled by pattern %s", rule)
 	s.cands = append(s.cands, nc)
+	s.byStart[a] = append(s.byStart[a], nc)
 	return nc
+}
+
+// supportParts gives context to every candidate the match consumed inside
+// the range of the labelled candidate whole, and reports whether there is
+// one.
+func (s *state) supportParts(rule string, m rules.PatternMatch, whole *candidate) bool {
+	found := false
+	for _, id := range m.Spans {
+		c := s.cands[id]
+		if c == whole || c.start < whole.start || c.end > whole.end {
+			continue
+		}
+		found = true
+		if !c.context && !c.removed {
+			c.context = true
+			s.note(c, "pattern %s gives context", rule)
+		}
+	}
+	return found
 }
 
 // positions maps terms [ts, te) to content positions [a, b).

@@ -6,9 +6,10 @@
 // and a pattern emits a child_of fact whose argument is the whole person.
 // The rule set is data: a host owns its own file and type names. The
 // morphology is a tiny TSV registered in code, so the example needs no
-// download. That base knows only a few words, so spans a pattern created
-// over other words carry the flag predicted (with the real base dictionary it
-// appears only for words the dictionary has to guess).
+// download. That base knows only a few words, so the part a pattern
+// labelled over another word («Михаилова») carries the flag predicted (with
+// the real base dictionary it appears only for words the dictionary has to
+// guess). A person takes word flags only from words outside its parts.
 //
 // Run: go run ./examples/persons
 package main
@@ -178,12 +179,12 @@ func main() {
 	//   patronymic Петров                   nested ref=p1
 	//   surname    Сидоров                  nested ref=s1
 	// Анна Михаилова Кузнецова
-	//   person     Анна Михаилова Кузнецова predicted
+	//   person     Анна Михаилова Кузнецова
 	//   given_name Анна                     nested ref=g2
 	//   patronymic Михаилова                predicted candidate nested
 	//   surname    Кузнецова                nested ref=s2
 	// Анна Петрова Головина
-	//   person     Анна Петрова Головина    predicted
+	//   person     Анна Петрова Головина
 	//   given_name Анна                     nested ref=g2
 	//   patronymic Петрова                  nested ref=p1
 	//   surname    Головина                 candidate nested alt=division
@@ -192,7 +193,7 @@ func main() {
 	//   surname    Сидоров                  nested ref=s1
 	// Мария, дочь Ивана Петрова
 	//   given_name Мария                    ref=g3
-	//   person     Ивана Петрова            predicted
+	//   person     Ивана Петрова
 	//   given_name Ивана                    nested ref=g1
 	//   patronymic Петрова                  nested ref=p1
 	//   fact child_of child=«Мария» parent=«Ивана Петрова»

@@ -101,7 +101,7 @@ func TestFactsFollowTypesFilter(t *testing.T) {
 func TestFactsDeduplicated(t *testing.T) {
 	const twice = factRules + `  - name: kinship-copy
     patterns:
-      - name: child-of
+      - name: child-of-copy
         elements:
           - {type: given_name, role: child}
           - {token: punct, repeat: "?"}
@@ -112,7 +112,65 @@ func TestFactsDeduplicated(t *testing.T) {
           - emit: {kind: child_of, args: {child: child, parent: parent}}
 `
 	p, _ := newPipeline(t, testEntries(), twice)
-	if res := extract(t, p, Doc{Text: "Мария, дочь крестьянина Ивана"}); len(res.Facts) != 1 {
+	res := extract(t, p, Doc{Text: "Мария, дочь крестьянина Ивана"})
+	// The first rule that emitted the fact names it.
+	want := []Fact{{Kind: "child_of", Args: map[string]int{"child": 0, "parent": 2}, Rule: "child-of"}}
+	if !reflect.DeepEqual(res.Facts, want) {
 		t.Fatalf("facts = %+v", res.Facts)
+	}
+}
+
+// Facts come out in match order: book order of the patterns, then text
+// order of the matches; the order is the same on every run.
+func TestFactsInMatchOrder(t *testing.T) {
+	p, _ := newPipeline(t, testEntries(), factRules, personNesting)
+	const text = "Мария, дочь Ивана Петрова, 25 лет. Вера, дочь Ивана."
+	want := []Fact{
+		{Kind: "child_of", Args: map[string]int{"child": 0, "parent": 1}, Rule: "child-of"},
+		{Kind: "child_of", Args: map[string]int{"child": 5, "parent": 6}, Rule: "child-of"},
+		{Kind: "age", Args: map[string]int{"person": 1, "age": 4}, Rule: "age"},
+	}
+	for i := 0; i < 20; i++ {
+		res := extract(t, p, Doc{Text: text})
+		assertBrief(t, res.Spans, "given_name:Мария", "person:Ивана Петрова", "given_name:Ивана", "surname:Петрова",
+			"age:25", "given_name:Вера", "given_name:Ивана")
+		if !reflect.DeepEqual(res.Facts, want) {
+			t.Fatalf("run %d: facts = %+v", i, res.Facts)
+		}
+	}
+}
+
+// A fact follows its argument when a later pattern relabels it, whether the
+// candidate is retyped in place or replaced by an existing candidate of
+// the target type.
+func TestFactFollowsRelabelledArgument(t *testing.T) {
+	const yaml = `
+sets:
+  - name: kinship
+    patterns:
+      - name: child-of
+        elements:
+          - {type: given_name, role: child}
+          - lemma: сын|дочь
+          - {type: given_name}
+          - {type: surname, role: parent}
+        actions:
+          - emit: {kind: child_of, args: {child: child, parent: parent}}
+      - name: short-patronymic
+        elements:
+          - {type: given_name}
+          - {type: surname, role: p}
+        actions:
+          - relabel: {role: p, type: patronymic}
+`
+	want := []Fact{{Kind: "child_of", Args: map[string]int{"child": 0, "parent": 2}, Rule: "child-of"}}
+	withEntry := append(testEntries(), gazetteer.Entry{Alias: "Петров", Type: "patronymic", Ref: "patronymic:7", Canonical: "Петрович"})
+	for name, entries := range map[string][]gazetteer.Entry{"retyped in place": testEntries(), "existing target": withEntry} {
+		p, _ := newPipeline(t, entries, yaml)
+		res := extract(t, p, Doc{Text: "Мария дочь Ивана Петрова"})
+		assertBrief(t, res.Spans, "given_name:Мария", "given_name:Ивана", "patronymic:Петрова")
+		if !reflect.DeepEqual(res.Facts, want) {
+			t.Fatalf("%s: facts = %+v", name, res.Facts)
+		}
 	}
 }

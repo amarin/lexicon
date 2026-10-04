@@ -7,7 +7,9 @@ import (
 )
 
 // buildFacts keeps facts whose argument candidates were output (index maps
-// candidates to Result.Spans positions) and removes duplicates (decision P8).
+// candidates to Result.Spans positions) and removes duplicates (decision
+// P8). An argument a later relabel replaced with the existing candidate of
+// the target type follows the replacement.
 func (s *state) buildFacts(index map[*candidate]int) []Fact {
 	var out []Fact
 	seen := map[string]bool{}
@@ -15,6 +17,9 @@ func (s *state) buildFacts(index map[*candidate]int) []Fact {
 		args := make(map[string]int, len(f.args))
 		ok := true
 		for role, c := range f.args {
+			for c.replacedBy != nil {
+				c = c.replacedBy
+			}
 			i, found := index[c]
 			if !found {
 				ok = false
