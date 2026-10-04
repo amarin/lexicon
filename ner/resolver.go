@@ -46,8 +46,12 @@ func (r *resolver) schedule(cs []*candidate) *selection {
 	return sel
 }
 
-// inner returns the best selection strictly inside c among the types
-// allowed by Nesting[c.typ].
+// inner returns the best selection inside c among the types allowed by
+// Nesting[c.typ]: candidates strictly shorter than c, and — when c was
+// created by a pattern label — also non-labelled candidates on c's whole
+// range (decision P13: a one-word person keeps its surname part). A
+// labelled candidate is never the same-range inner of another one, so the
+// recursion ends.
 func (r *resolver) inner(c *candidate) *selection {
 	if sel, ok := r.memo[c]; ok {
 		return sel
@@ -59,7 +63,10 @@ func (r *resolver) inner(c *candidate) *selection {
 		lo := sort.Search(len(r.all), func(i int) bool { return r.all[i].end > c.start })
 		hi := sort.Search(len(r.all), func(i int) bool { return r.all[i].end > c.end })
 		for _, x := range r.all[lo:hi] {
-			if x != c && allowed[x.typ] && x.start >= c.start && x.end <= c.end && x.words() < c.words() {
+			if x == c || !allowed[x.typ] || x.start < c.start || x.end > c.end {
+				continue
+			}
+			if x.words() < c.words() || (c.labelled && !x.labelled) {
 				in = append(in, x)
 			}
 		}

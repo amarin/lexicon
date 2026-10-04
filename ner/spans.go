@@ -25,6 +25,9 @@ func (s *state) span(text string, c *candidate) Span {
 		Score:        float32(c.score),
 		Alternatives: s.alternatives(c),
 	}
+	if c.labelled && len(c.parts) > 0 {
+		sp.Normal = []string{s.composeNormal(c)}
+	}
 	if s.explain {
 		sp.Evidence = c.evidence
 	}
@@ -51,7 +54,34 @@ func (s *state) span(text string, c *candidate) Span {
 	return sp
 }
 
-// output orders spans (Start asc, End desc, Type), applies the Types filter
+// composeNormal builds the normal form of a labelled span from the spans
+// nested in it: each part gives its first normal form, every other word
+// its first lemma (decision P12).
+func (s *state) composeNormal(c *candidate) string {
+	var words []string
+	parts := c.parts
+	for p := c.start; p < c.end; {
+		for len(parts) > 0 && parts[0].start < p {
+			parts = parts[1:]
+		}
+		if len(parts) > 0 && parts[0].start == p {
+			if n := parts[0].normalForms(); len(n) > 0 {
+				words = append(words, n[0])
+			}
+			p = parts[0].end
+			parts = parts[1:]
+			continue
+		}
+		if n := s.lemmaNormals(p, p+1); len(n) > 0 {
+			words = append(words, n[0])
+		}
+		p++
+	}
+	return strings.Join(words, " ")
+}
+
+// output orders spans (Start asc, End desc, a labelled span before its
+// same-range part, Type), applies the Types filter
 // and returns the index of every kept candidate in the result. Extract
 // ignores the index map for now; it is reserved for v0.3 facts, which
 // refer to spans by their position in Result.Spans.
@@ -74,6 +104,10 @@ func (s *state) output(text string, chosen []*candidate, nested map[*candidate]b
 		}
 		if x.End != y.End {
 			return x.End > y.End
+		}
+		// One range: a labelled span is the outer one of its nested part.
+		if lx, ly := chosen[order[a]].labelled, chosen[order[b]].labelled; lx != ly {
+			return lx
 		}
 		return x.Type < y.Type
 	})

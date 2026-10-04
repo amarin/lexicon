@@ -39,7 +39,11 @@ func (s *state) resolve() ([]*candidate, map[*candidate]bool) {
 			if inside {
 				nested[c] = true
 			}
-			walk(r.inner(c), true)
+			in := r.inner(c)
+			if c.labelled {
+				c.parts = in.items
+			}
+			walk(in, true)
 		}
 	}
 	walk(r.schedule(live), false)
@@ -49,8 +53,8 @@ func (s *state) resolve() ([]*candidate, map[*candidate]bool) {
 
 // attachAlternatives keeps every live loser on a winner's exact range with
 // another type as an alternative of the winner (D14) and flags ties (D7).
-// Two candidates on one range never both win: nesting needs a strictly
-// shorter inner candidate. Live candidates are bucketed by range, keeping
+// Two candidates on one range both win only as a labelled span and its
+// nested part (P13); those are not alternatives of each other. Live candidates are bucketed by range, keeping
 // their live order within a bucket.
 func (s *state) attachAlternatives(chosen, live []*candidate) {
 	byRange := make(map[[2]int][]*candidate, len(live))
@@ -58,9 +62,13 @@ func (s *state) attachAlternatives(chosen, live []*candidate) {
 		k := [2]int{o.start, o.end}
 		byRange[k] = append(byRange[k], o)
 	}
+	won := make(map[*candidate]bool, len(chosen))
+	for _, c := range chosen {
+		won[c] = true
+	}
 	for _, c := range chosen {
 		for _, o := range byRange[[2]int{c.start, c.end}] {
-			if o == c || o.typ == c.typ {
+			if o == c || o.typ == c.typ || won[o] {
 				continue
 			}
 			c.alts = append(c.alts, o)
