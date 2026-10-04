@@ -55,6 +55,8 @@ func (p *Pipeline) Extract(ctx context.Context, d Doc, opts ...Option) (Result, 
 	if err := ctx.Err(); err != nil {
 		return Result{}, err
 	}
-	res.Spans, _ = st.output(d.Text, chosen, nested, d.Types)
+	var index map[*candidate]int
+	res.Spans, index = st.output(d.Text, chosen, nested, d.Types)
+	res.Facts = st.buildFacts(index)
 	return res, nil
 }

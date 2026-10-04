@@ -57,6 +57,20 @@ func (s *state) act(prog *rules.Program, l *lattice, m rules.PatternMatch) {
 			if c := s.label(prog.Name(), l, m, cp, a.Label); c != nil {
 				bound[a.Label.Role] = c
 			}
+		case a.Emit != nil:
+			f := pendingFact{kind: a.Emit.Kind, rule: prog.Name(), args: map[string]*candidate{}}
+			complete := true
+			for factRole, role := range a.Emit.Args {
+				c := bound[role]
+				if c == nil {
+					complete = false
+					break
+				}
+				f.args[factRole] = c
+			}
+			if complete {
+				s.facts = append(s.facts, f)
+			}
 		}
 	}
 }
