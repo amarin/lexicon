@@ -75,6 +75,46 @@ feature in `docs/en/scenarios.md` and `docs/ru/scenarios.md` (with its
 "Available since"), `library.md`/`cli.md` in both languages, a runnable
 example, and the "Planned" section.
 
+- [ ] **Toponym forms in the gazetteer** (requested by genodex E9a,
+  2026-10-04; version not assigned). genodex stores mention suggestions with
+  candidate records taken from span `Refs`. On the owner's 45 real texts
+  (pre-reform metric records) the confirmed place was among the candidates
+  for 4 of 11 mentions; every miss is a place span that carries a wrong ref
+  or none. Three cases, reproduced with `genodex extract --explain`
+  (lexicon 0.4.0, base OpenCorpora dictionary present):
+
+  - [ ] **Adjective name, feminine record, oblique case.** Records
+    «Калужская» (governorate) and «Калужский» (uezd). «Калужской губерніи»
+    → `lemma match «Калужский»`, one ref: the uezd. The governorate is found
+    only in the nominative («Калужская губернія» → both refs, by surface).
+    The alias «Калужская» should be reachable by the lemma of its own form:
+    index an alias under the lemmas of its words, so that an oblique form
+    matches every record whose alias shares the lemma — here both, flagged
+    `Ambiguous`, and the hint keyword (`губерния` vs `уезд`) or the host
+    decides.
+  - [ ] **Oblique form of a noun toponym the dictionary does not know.**
+    Records «Озёрна» (village, feminine) and «Озерны» (another village).
+    «села Озерны» is the genitive of the first, but it surface-matches the
+    second and resolves to it alone. Needed: when a settlement keyword
+    governs the name («села», «деревни», «сельца» + genitive), try the
+    forms a record's alias would take in that case (prediction by ending
+    for unknown nouns: -а → -ы/-и, -о → -а, -ь → -и/-я) and return every
+    record that fits, `Ambiguous`; an exact surface hit must not hide a
+    lemma or predicted-form hit on the same range. Check ё/е folding in
+    alias matching on the same example.
+  - [ ] **Possessive toponym agreeing with the keyword.** Record
+    «Потапово». «деревни Потаповой» (also «Купріяновой», «Лягушкиной»)
+    comes out as a trigger candidate without refs, normal form «потапов».
+    Names in -ово/-ево/-ино/-ыно and their old feminine and masculine
+    variants (-ова/-ина, -ов/-ин) decline as possessive adjectives agreeing
+    with the keyword: -овой/-иной after «деревни», -ова/-ина after «села»,
+    «сельца». Match such forms to records in -ово/-ова/-ов (and -ино/-ина/
+    -ин) — as generated aliases for the gazetteer or as a normalisation of
+    the candidate's form.
+  - [ ] **Golden cases** for the three items (synthetic names), modern and
+    pre-reform spelling; a host workaround exists meanwhile (a name variant
+    on the record).
+
 ## Open questions (from v0.1)
 
 Carried over from [implementation/v0.1-analysis.md](implementation/v0.1-analysis.md#open-questions-still-open);
