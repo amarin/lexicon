@@ -15,7 +15,7 @@ import (
 )
 
 // runExtract implements `lexicon extract`: it finds entity spans (gazetteers
-// and rules) in free text. A pipeline/registry Close error is joined into
+// and rules) in free text and prints the facts patterns emitted. A pipeline/registry Close error is joined into
 // the result so it is never silently dropped.
 func runExtract(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.Writer) (err error) {
 	fs := flag.NewFlagSet("extract", flag.ContinueOnError)
@@ -110,6 +110,18 @@ func runExtract(ctx context.Context, args []string, stdin io.Reader, stdout, std
 				fmt.Fprintf(tw, "\t\t\t\t  alt %s %s %s %.2f\n", a.Type,
 					strings.Join(a.Normal, "|"), strings.Join(a.Refs, "|"), a.Score)
 			}
+		}
+
+		for _, f := range res.Facts {
+			if *format == "jsonl" {
+				if err := enc.Encode(newFactJSON(i+1, f)); err != nil {
+					return fmt.Errorf("extract: %w", err)
+				}
+
+				continue
+			}
+
+			fmt.Fprintf(tw, "%d\t\t\tfact\t%s\t%s\t\t\t\n", i+1, f.Kind, describeFact(f, res.Spans))
 		}
 	}
 
