@@ -13,6 +13,7 @@ symbol is the final word; this page groups them and states the contracts.
 - [rules](#rules) — hints, triggers, rule sets by document tags *(0.2.0)*
 - [ner](#ner) — the extraction pipeline *(0.2.0)*
 - [nertest](#nertest) — golden-set scoring *(0.2.0)*
+- [dates](#dates) — dates from record columns *(0.5.0, unreleased)*
 - [Contracts](#contracts) — offsets, versions, concurrency, errors
 
 ## textnorm
@@ -559,6 +560,21 @@ threshold, e.g. `surname: strict recall 0.500 < 0.900`.
 it cannot set `Doc.Types` and stops at the first `Extract` error.
 `LoadCases` also rejects gold spans with empty text or type, and lines
 over 4 MiB.
+
+## dates
+
+`import "github.com/amarin/lexicon/dates"` — imports only `textnorm`.
+
+- `Month(word string) (int, bool)` — month number 1..12 from a month word:
+  nominative and genitive, abbreviations with or without a dot («янв.»,
+  «сент.»), pre-reform spelling («іюня», «генваря», «ѳевраля»), any case.
+- `Date{Year, Month, Day int; YearFromContext bool}`.
+- `Parse(text string, ctxYear int) (Date, bool)` — «21 янв.», «21 генваря
+  1883 года», «21-го января», «21.01», «21.01.1884». Optional «г.»/«года»
+  suffix. The year from the text wins; otherwise `ctxYear` (0 = none, then
+  a date without a year fails) and `YearFromContext` is set. Years are four
+  digits, 1000..9999. Invalid calendar dates, including 29 February in a
+  non-leap year, and anything unparsable return `ok=false`. Never panics.
 
 ## Contracts
 

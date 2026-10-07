@@ -20,7 +20,8 @@ Project instructions for AI agents (Codex, Claude, LGTM).
   base dictionary; imports gomorphy's pymorphy loader), `cmd/lexicon` (CLI). From
   v0.2: `gazetteer` (TSV/in-memory alias sources compiled into versioned trie
   snapshots, zero-allocation matching), `rules` (YAML/JSON rule books: hints,
-  triggers, sequence patterns, tag-gated rule sets), `ner` (the extraction pipeline — `Doc`, `Span`,
+  triggers, sequence patterns, tag-gated rule sets), `dates` (v0.5: dates from pre-reform record text, `Month`/`Parse`;
+  imports only `textnorm`), `ner` (the extraction pipeline — `Doc`, `Span`,
   `Fact`, `Result`, filters, pattern actions, scoring, overlap resolution — built on `gazetteer` and
   `rules`), `nertest` (golden-JSONL test harness with strict/partial
   precision/recall), and `internal/fakedict` (the `lexicon.Dictionaries`/

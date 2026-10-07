@@ -5,6 +5,17 @@ Notable changes of the project are recorded in this file (format inspired by
 
 ## [Unreleased]
 
+### Added
+
+- `dates`: new package for dates in pre-reform Russian records. `Month`
+  returns a month number from a month word (nominative, genitive,
+  abbreviations, pre-reform spelling: «іюня», «генваря»); `Date` and `Parse`
+  read «21 янв.», «21 генваря 1883 года», «21.01», «21.01.1884». The year
+  from the text wins over the context year; `Date.YearFromContext` marks a
+  substituted year; impossible dates and garbage give `ok=false`. Imports
+  only `textnorm`; no `textnorm` table changed, no version bumped
+  (requested by genodex record entry).
+
 ## [0.4.0] - 2026-10-04
 
 ### Added

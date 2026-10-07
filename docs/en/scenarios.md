@@ -1051,6 +1051,30 @@ prints fact rows.
   not one fact with a list ([todo](../todo.md)).
 - `nertest` golden sets score spans only, not facts.
 
+## 26. Dates from record columns
+
+Parish and civil records write dates in pre-reform Russian: «21 генваря»,
+«1 іюня 1883 г.», «3 сент.», or just «21.01» when the year sits in a
+heading. `dates.Parse(text, ctxYear)` reads such a date; `dates.Month(word)`
+reads a lone month word. Spelling goes through `textnorm.PreReform`, so
+ѣ, і, ѳ and letter case are not your problem.
+
+```go
+d, ok := dates.Parse("21 генваря 1883 года", 1884) // 1883-01-21, from text
+d, ok = dates.Parse("3 сент.", 1885)                // 1885-09-03, YearFromContext
+_, ok = dates.Parse("3 сент.", 0)                   // false: no year anywhere
+```
+
+The year from the text always wins over `ctxYear`; `YearFromContext` is set
+only when the year was substituted. Impossible dates (31 февраля, month 13,
+day 0, 29 февраля in a non-leap year), unknown month words and any other
+text give `ok=false`. A two-digit year («21.01.84») is rejected as
+ambiguous. Dates are taken as written: no Julian/Gregorian conversion.
+
+**Example:** `ExampleParse` and `ExampleMonth` in `dates/example_test.go`.
+
+**Available since:** 0.5.0 (unreleased).
+
 ## Planned
 
 Not available yet.
