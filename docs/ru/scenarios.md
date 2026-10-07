@@ -1106,7 +1106,7 @@ _, ok = dates.Parse("3 сент.", 0)                   // false: года не�
 
 **Пример:** `ExampleParse` и `ExampleMonth` в `dates/example_test.go`.
 
-**Доступно с:** 0.5.0 (не выпущено).
+**Доступно с:** 0.5.0.
 
 ## Запланировано
 

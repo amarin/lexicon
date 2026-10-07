@@ -1073,7 +1073,7 @@ ambiguous, and numeric dates are always read as day.month[.year]. A «г.» suff
 
 **Example:** `ExampleParse` and `ExampleMonth` in `dates/example_test.go`.
 
-**Available since:** 0.5.0 (unreleased).
+**Available since:** 0.5.0.
 
 ## Planned
 

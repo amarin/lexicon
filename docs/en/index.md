@@ -11,7 +11,7 @@
   [scenario 22](scenarios.md#22-word-forms-and-number-agreement);
   patterns and facts (0.4.0):
   [scenarios 23–25](scenarios.md#23-sequence-patterns);
-  dates (0.5.0, unreleased):
+  dates (0.5.0):
   [scenario 26](scenarios.md#26-dates-from-record-columns)
 - [Installation](installation.md)
 - [CLI: lexicon](cli.md)

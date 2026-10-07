@@ -25,7 +25,7 @@ a document:
   and emit facts *(0.4.0)*. Overlapping matches are resolved, and every span can
   explain why it was produced. A golden-set harness measures precision and
   recall per entity type.
-- **Dates** *(0.5.0, unreleased)*. The `dates` package reads dates from
+- **Dates** *(0.5.0)*. The `dates` package reads dates from
   parish records — «21 генваря 1883», «3 сент.», «21.01» — with pre-reform
   month spelling and a context year for dates written without one.
 - **Dictionaries as data.** Morphology dictionaries are gomorphy `.dat` or

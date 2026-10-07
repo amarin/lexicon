@@ -13,7 +13,7 @@ symbol is the final word; this page groups them and states the contracts.
 - [rules](#rules) — hints, triggers, rule sets by document tags *(0.2.0)*
 - [ner](#ner) — the extraction pipeline *(0.2.0)*
 - [nertest](#nertest) — golden-set scoring *(0.2.0)*
-- [dates](#dates) — dates from record columns *(0.5.0, unreleased)*
+- [dates](#dates) — dates from record columns *(0.5.0)*
 - [Contracts](#contracts) — offsets, versions, concurrency, errors
 
 ## textnorm
