@@ -1069,7 +1069,7 @@ The year from the text always wins over `ctxYear`; `YearFromContext` is set
 only when the year was substituted. Impossible dates (31 февраля, month 13,
 day 0, 29 февраля in a non-leap year), unknown month words and any other
 text give `ok=false`. A two-digit year («21.01.84») is rejected as
-ambiguous. Dates are taken as written: no Julian/Gregorian conversion.
+ambiguous, and numeric dates are always read as day.month[.year]. A «г.» suffix needs a year. Dates are taken as written: no Julian/Gregorian conversion.
 
 **Example:** `ExampleParse` and `ExampleMonth` in `dates/example_test.go`.
 

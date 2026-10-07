@@ -23,18 +23,18 @@ const (
 	maxYear = 9999
 )
 
-// yearSuffix is an optional "г.", "г", "года" after the year (or after the
-// month when there is no year); it is the tail of every pattern.
-const yearSuffix = `(?:\s*(?:года|г)\.?)?`
+// yearPart is an optional four-digit year with an optional "г.", "г" or "года"
+// after it; the suffix is not allowed without a year.
+const yearPart = `(?:\s*(\d{4})(?:\s*(?:года|г)\.?)?)?`
 
 var (
 	// numericRe: "21.01", "21.01.1884", "21/01/1884", "21-01-1884".
-	numericRe = regexp.MustCompile(`^(\d{1,2})[./-](\d{1,2})(?:[./-](\d{4}))?` + yearSuffix + `$`)
+	numericRe = regexp.MustCompile(`^(\d{1,2})[./-](\d{1,2})(?:[./-](\d{4})(?:\s*(?:года|г)\.?)?)?$`)
 	// wordRe: "21 янв.", "21 генваря 1883", "21-го января 1883 года".
-	wordRe = regexp.MustCompile(`^(\d{1,2})(?:-?(?:го|е))?[\s.]*([а-я]+)\.?(?:\s*(\d{4}))?` + yearSuffix + `$`)
+	wordRe = regexp.MustCompile(`^(\d{1,2})(?:-го)?[\s.]*([а-я]+)\.?` + yearPart + `$`)
 )
 
-// Parse reads a date from text: "21 янв.", "21 генваря 1883", "21 января 1883
+// Parse reads a date from text (numeric forms are day.month[.year]): "21 янв.", "21 генваря 1883", "21 января 1883
 // года", "21.01", "21.01.1884". The year from the text wins; otherwise ctxYear
 // is used and YearFromContext is set. ctxYear 0 means no context: a date
 // without a year then fails. Years must have four digits (1000..9999); a
