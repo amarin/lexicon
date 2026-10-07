@@ -18,6 +18,7 @@ Mark completed items with `[x]` and move their write-up to
 | v0.2 — dictionary NER: `gazetteer`, `rules` (hints, triggers, rule sets by document tags), `ner`, `nertest`, CLI `extract`/`golden`; user docs (scenarios 15–20, EN + RU) and examples `ner`, `gazetteer`, `golden` | 0.2.0, 2026-09-26 | [implementation/v0.2-ner.md](implementation/v0.2-ner.md) |
 | v0.3 — inflection API: `Registry.Inflect`, `NumeralGrammemes` (word forms by grammemes, number agreement; requested by genodex); scenario 22 (EN + RU), example `inflect` | 0.3.0, 2026-10-01 | [implementation/v0.3-inflect.md](implementation/v0.3-inflect.md), [plan](plans/2026-10-01-v0.3-inflect.md) |
 | v0.4 — patterns: `rules` sequence patterns (conditions, negation, groups; `relabel`, `boost`, `label`, `emit`), a person as one span with nested parts, `Result.Facts`, CLI facts, span end over an abbreviation dot (`ner-3`, ⚠ re-extract); scenarios 23–25 (EN + RU), example `persons`, person golden set (requested by genodex E9) | 0.4.0, 2026-10-04 | [implementation/v0.4-patterns.md](implementation/v0.4-patterns.md), [plan](plans/2026-10-04-v0.4-patterns.md), [design](specs/2026-10-04-v0.4-patterns-design.md) |
+| v0.5 — `dates`: `Month` and `Parse` for dates in pre-reform record text («21 генваря 1883», «3 сент.», «21.01»), context year, no calendar conversion; scenario 26 (EN + RU), godoc examples (requested by genodex record entry) | 0.5.0, 2026-10-07 | [implementation/v0.5-dates.md](implementation/v0.5-dates.md) |
 
 ## Next milestones
 

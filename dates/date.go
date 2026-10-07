@@ -34,8 +34,9 @@ var (
 	wordRe = regexp.MustCompile(`^(\d{1,2})(?:-го)?[\s.]*([а-я]+)\.?` + yearPart + `$`)
 )
 
-// Parse reads a date from text (numeric forms are day.month[.year]): "21 янв.", "21 генваря 1883", "21 января 1883
-// года", "21.01", "21.01.1884". The year from the text wins; otherwise ctxYear
+// Parse reads a date from text: "21 янв.", "21 генваря 1883", "21 января 1883
+// года", "21.01", "21.01.1884". Numeric forms are day.month[.year] with ".",
+// "/" or "-" as the separator. The year from the text wins; otherwise ctxYear
 // is used and YearFromContext is set. ctxYear 0 means no context: a date
 // without a year then fails. Years must have four digits (1000..9999); a
 // two-digit year is rejected as ambiguous. Impossible dates (31 февраля, month

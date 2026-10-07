@@ -573,8 +573,10 @@ over 4 MiB.
   1883 года», «21-го января», «21.01», «21.01.1884». Optional «г.»/«года»
   suffix. The year from the text wins; otherwise `ctxYear` (0 = none, then
   a date without a year fails) and `YearFromContext` is set. Years are four
-  digits, 1000..9999. Invalid calendar dates, including 29 February in a
+  digits, 1000..9999. Numeric forms are day.month[.year] with `.`, `/` or
+  `-` as the separator. Invalid calendar dates, including 29 February in a
   non-leap year, and anything unparsable return `ok=false`. Never panics.
+  Dates are taken as written: no Julian/Gregorian conversion.
 
 ## Contracts
 

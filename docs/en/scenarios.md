@@ -58,6 +58,7 @@ gazetteers and rules are tiny TSVs and YAML strings in code.
 | 23 | [Sequence patterns](#23-sequence-patterns) | 0.4.0 | [persons](../../examples/persons/main.go) |
 | 24 | [A person as one span](#24-a-person-as-one-span) | 0.4.0 | [persons](../../examples/persons/main.go) |
 | 25 | [Facts from patterns](#25-facts-from-patterns) | 0.4.0 | [persons](../../examples/persons/main.go) |
+| 26 | [Dates from record columns](#26-dates-from-record-columns) | 0.5.0 | [dates](../../examples/dates/main.go), `ExampleParse` |
 | — | [Planned](#planned) | — | — |
 
 ## 1. Compare words across orthographies
@@ -1069,9 +1070,16 @@ The year from the text always wins over `ctxYear`; `YearFromContext` is set
 only when the year was substituted. Impossible dates (31 февраля, month 13,
 day 0, 29 февраля in a non-leap year), unknown month words and any other
 text give `ok=false`. A two-digit year («21.01.84») is rejected as
-ambiguous, and numeric dates are always read as day.month[.year]. A «г.» suffix needs a year. Dates are taken as written: no Julian/Gregorian conversion.
+ambiguous, and numeric dates are always read as day.month[.year], with `.`,
+`/` or `-` between the parts. A word date takes an optional «-го» after the
+day («21-го января»), a month abbreviation with or without a dot, and
+extra spaces. The «г.»/«года» suffix is allowed only after a year
+(«21.01 г.» is not a date). Dates are taken as written: no
+Julian/Gregorian conversion, so a pre-1918 record date stays in the old
+style.
 
-**Example:** `ExampleParse` and `ExampleMonth` in `dates/example_test.go`.
+**Example:** [examples/dates](../../examples/dates/main.go); `ExampleParse` and
+`ExampleMonth` in `dates/example_test.go`.
 
 **Available since:** 0.5.0.
 
