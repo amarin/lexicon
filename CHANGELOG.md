@@ -5,6 +5,8 @@ Notable changes of the project are recorded in this file (format inspired by
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-10-07
+
 ### Added
 
 - Example `examples/dates` (scenario 26): `dates.Parse` and `dates.Month`
@@ -15,7 +17,8 @@ Notable changes of the project are recorded in this file (format inspired by
 - Documentation of `dates`: numeric separators (`.`, `/`, `-`), the «-го»
   day form, the «г.» suffix needing a year and the lack of Julian/Gregorian
   conversion are described in scenario 26 and `library.md` (EN + RU); the
-  `Parse` godoc is reflowed; scenario 26 is added to the scenario tables. Write-up: `docs/implementation/v0.5-dates.md`.
+  `Parse` godoc is reflowed; scenario 26 is added to the scenario tables. Write-up:
+  `docs/implementation/v0.5-dates.md`.
 
 ## [0.5.0] - 2026-10-07
 
